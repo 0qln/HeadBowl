@@ -1,34 +1,33 @@
-﻿using HeadBowl.Activations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Drawing;
+using System.Numerics;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
+using HeadBowl.Activations;
+using HeadBowl.Loss;
 
 namespace HeadBowl.Layers
 {
-    public class Layer<TActivation, TFloat> : IComputationalLayer<TFloat>
+    /*
+    public class HiddenLayer<TActivation, TFloat> : IComputationalLayer<TFloat>
         where TFloat : struct
         where TActivation : IActivationFunction<TFloat>, new()
     {
-        public IComputationalLayer<TFloat> NextLayer { get; private set; }
         public ILayer<TFloat> PrevLayer { get; private set; }
+        public IComputationalLayer<TFloat> NextLayer { get; private set; }
         public int Size { get; private set; }
         public TFloat[] Biases { get; private set; }
         public TFloat[,] Weights { get; private set; }
         public TFloat[] Values { get; private set; }
 
         // Learning
-        public TFloat[] LastGradients { get; private set; }
+        public TFloat LastGradients { get; private set; }
         public TFloat LearningRate { get; set; }
         public TFloat Cost { get; private set; }
 
         private readonly TActivation _activate = new();
 
 
-        public Layer (
-            ILayer<TFloat> prevLayer,
+        public HiddenLayer(
+            ILayer<TFloat> prevLayer, 
             int size)
         {
             PrevLayer = prevLayer;
@@ -39,7 +38,7 @@ namespace HeadBowl.Layers
         }
 
 #pragma warning disable CS8618 // This is used by the `Activator.CreateInstance` function
-        internal Layer() { }
+        internal HiddenLayer() { }
 #pragma warning restore CS8618 
 
         IInitializable IInitializable.Init(params object[] parameters)
@@ -52,7 +51,6 @@ namespace HeadBowl.Layers
 
             return this;
         }
-
 
 
         public TFloat[] Forward()
@@ -75,33 +73,11 @@ namespace HeadBowl.Layers
         }
 
 
-        /// <summary><inheritdoc/></summary>
-        public TFloat[] Backward(TFloat[] expected)
-        {
-            var gradients = new TFloat[Size];
-
-            // calculate gradient
-            for (int node = 0; node < Size; node++)
-            {
-                gradients[node] = ((dynamic)Values[node] - expected[node]) * _activate.Backward(Values[node]);
-            }
-
-            // apply gradients for the last layer
-            for (int node = 0; node < Size; node++)
-            {
-                //calculates the w' and b' for the last layer in the network
-                Biases[node] -= (dynamic)gradients[node] * LearningRate;
-
-                for (int weight = 0; weight < PrevLayer.Size; weight++)
-                {
-                    Weights[node, weight] -= (dynamic)gradients[node] * PrevLayer.Values[weight] * LearningRate;
-                }
-            }
-
-            return gradients;
-        }
-
-        /// <summary><inheritdoc/></summary>
+        /// <summary>
+        /// The backpropagation funtion for the hidden layers.
+        /// </summary>
+        /// <param name="expected"></param>
+        /// <returns>The gradients for the previous layer</returns>
         public TFloat[] Backward()
         {
             var gradients = new TFloat[Size];
@@ -111,7 +87,7 @@ namespace HeadBowl.Layers
             {
                 for (int nextLayerNode = 0; nextLayerNode < NextLayer.Size; nextLayerNode++)
                 {
-                    gradients[node] += (dynamic)NextLayer.LastGradients[nextLayerNode] * NextLayer.Weights[nextLayerNode, node];
+                    gradients[node] += NextLayer.LastGradients[nextLayerNode] *  Weights[nextLayerNode, node];
                 }
                 gradients[node] *= (dynamic)_activate.Backward(Values[node]);
             }
@@ -120,16 +96,17 @@ namespace HeadBowl.Layers
             for (int node = 0; node < Size; node++)
             {
                 // modify biases of network
-                Biases[node] -= (dynamic)gradients[node] * LearningRate;
+                _biases[layer - 1][node] -= gradients[layer][node] * LearningRate;
                 // iterate over inputs to layer
-                for (int weight = 0; weight < PrevLayer.Size; weight++)
+                for (int weight = 0; weight < _layers[layer - 1]; weight++)
                 {
                     // modify weights of network
-                    Weights[node, weight] -= (dynamic)NextLayer.LastGradients[node] * Values[weight] * LearningRate;
+                    _weights[layer - 1][node][weight] -= gradients[layer][node] * _neurons[layer - 1][weight] * LearningRate;
                 }
             }
 
             return gradients;
         }
     }
+    */
 }

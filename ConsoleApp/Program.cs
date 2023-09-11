@@ -15,6 +15,7 @@ public static class Program
 
         net.Forward(Xor<float>.Data[0].Inputs);
 
+
         for (int i = 0;  i < 10000; i++)
         {
             foreach (var data in Xor<float>.Data)
