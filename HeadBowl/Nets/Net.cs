@@ -11,10 +11,10 @@ namespace HeadBowl.Nets
     public class Net<TFloat> : INet
     {
         public IInputLayer<TFloat> InputLayer { get; }
-        public ILayer<TFloat>[] Layers { get; }
+        public IComputationalLayer<TFloat>[] Layers { get; }
 
 
-        public Net(IInputLayer<TFloat> inputLayer, params ILayer<TFloat>[] layers)
+        public Net(IInputLayer<TFloat> inputLayer, params IComputationalLayer<TFloat>[] layers)
         {
             InputLayer = inputLayer;
             Layers = layers;
@@ -49,7 +49,7 @@ namespace HeadBowl.Nets
         {
             Forward(inputs);
             
-            TFloat[] lastGradients = Layers[^1].Backward(expected);
+            Layers[^1].Backward(expected);
 
             for (int i = Layers.Length-2; i >= 0;  i--)
             {

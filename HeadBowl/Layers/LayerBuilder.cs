@@ -20,7 +20,22 @@ namespace HeadBowl.Layers
 
         ILayer<TFloat> ILayerBuilder<TFloat>._build(ILayer<TFloat> prevLayer)
         {
-            return new Layer<T, TFloat>(prevLayer, _size);
+            return new HiddenLayer<T, TFloat>(prevLayer, _size);
+        }
+
+        internal ILayer<TFloat> _build<TLayer>(ILayer<TFloat> prevLayer)
+            where TLayer : ILayer<TFloat>
+        {
+            // Create an instance of TLayer using reflection
+            var layerInstance = Activator.CreateInstance(typeof(TLayer)) as ILayer<TFloat>;
+
+            if (layerInstance is null) throw new ArgumentException();
+
+            // Initialize the instance with prevLayer and _size
+            layerInstance.Init(prevLayer, _size);
+
+            // Return the created instance
+            return layerInstance;
         }
     }
 }

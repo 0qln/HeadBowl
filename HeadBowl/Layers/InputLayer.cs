@@ -10,8 +10,8 @@ namespace HeadBowl.Layers
 {
     public class InputLayer<TFloat> : IInputLayer<TFloat>
     {
-        public override int Size { get; init; }
-        public override TFloat[] Values { get; set; }
+        public int Size { get; internal set; }
+        public TFloat[] Values { get; set; }
 
 
         public InputLayer(
@@ -19,6 +19,11 @@ namespace HeadBowl.Layers
         {
             Size = size;
             Values = new TFloat[Size];
+        }
+
+        public IInitializable Init(params object[] parameters)
+        {
+            throw new NotImplementedException();
         }
     }
 }

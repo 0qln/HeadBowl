@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Layers
 {
-    public interface ILayer<TFloat> : IInitializable
-    {
-        public int Size { get; }
-        public TFloat[] Values { get; }
-    }
+    //public interface IOutputLayer<TFloat> : IComputationalLayer<TFloat>
+    //{
+    //}
 }
