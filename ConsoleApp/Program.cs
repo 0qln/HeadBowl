@@ -1,6 +1,6 @@
-﻿using HeadBowl.Activations;
-using HeadBowl.Layers;
-using HeadBowl.Nets;
+﻿using HeadBowl.OLD.Layers;
+using HeadBowl.OLD.Nets;
+using HeadBowl.OLD.Activations;
 using HeadBowl.Training_Data;
 
 

@@ -1,11 +1,11 @@
-﻿using HeadBowl.Activations;
+﻿using HeadBowl.OLD.Activations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HeadBowl.Layers
+namespace HeadBowl.OLD.Layers
 {
     public class LayerBuilder<T, TFloat> : ILayerBuilder<TFloat>
         where T : IActivationFunction<TFloat>, new()

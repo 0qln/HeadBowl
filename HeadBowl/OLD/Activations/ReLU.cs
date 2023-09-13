@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HeadBowl.Activations
+namespace HeadBowl.OLD.Activations
 {
     public class ReLU<TFloat> : IActivationFunction<TFloat>
         where TFloat : IComparable<TFloat>

@@ -1,8 +1,7 @@
 ﻿using System.Numerics;
-using HeadBowl.Activations;
-using HeadBowl.Loss;
+using HeadBowl.OLD.Activations;
 
-namespace HeadBowl.Layers
+namespace HeadBowl.OLD.Layers
 {
     public class Layer<T, TFloat> : ILayer<TFloat>
         where TFloat : struct
@@ -20,7 +19,7 @@ namespace HeadBowl.Layers
 
 
         public Layer(
-            ILayer<TFloat> prevLayer, 
+            ILayer<TFloat> prevLayer,
             int size)
         {
             PrevLayer = prevLayer;

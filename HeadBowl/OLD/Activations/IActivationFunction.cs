@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HeadBowl.Activations
+namespace HeadBowl.OLD.Activations
 {
-    public interface IActivationFunction<TFloat> 
+    public interface IActivationFunction<TFloat>
     {
         /// <summary>
         /// Normal function

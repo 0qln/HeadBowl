@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace HeadBowl.Loss
+namespace HeadBowl.OLD.Loss
 {
     public static class Loss
     {

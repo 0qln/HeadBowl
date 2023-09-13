@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HeadBowl.Layers
+namespace HeadBowl.OLD.Nets
 {
-    internal class ReLULayer
+    public interface INet
     {
     }
 }

@@ -1,4 +1,4 @@
-﻿using HeadBowl.Layers;
+﻿using HeadBowl.OLD.Layers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HeadBowl.Nets
+namespace HeadBowl.OLD.Nets
 {
     public class Net<TFloat> : INet
     {
@@ -28,7 +28,7 @@ namespace HeadBowl.Nets
             Layers[0] = layerBuilders[0]._build(InputLayer);
             for (int i = 1; i < layerBuilders.Length; i++)
             {
-                Layers[i] = layerBuilders[i]._build(Layers[i-1]);
+                Layers[i] = layerBuilders[i]._build(Layers[i - 1]);
             }
         }
 
@@ -48,10 +48,10 @@ namespace HeadBowl.Nets
         public void Backward(TFloat[] inputs, TFloat[] expected)
         {
             Forward(inputs);
-            
+
             TFloat[] lastGradients = Layers[^1].Backward(expected);
 
-            for (int i = Layers.Length-2; i >= 0;  i--)
+            for (int i = Layers.Length - 2; i >= 0; i--)
             {
                 lastGradients = Layers[i].Backward(lastGradients);
             }

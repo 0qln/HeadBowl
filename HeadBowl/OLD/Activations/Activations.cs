@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HeadBowl.Activations
+namespace HeadBowl.OLD.Activations
 {
     public static class Activations<TFloat>
         where TFloat : IComparable<TFloat>
