@@ -10,18 +10,25 @@ namespace HeadBowl.OLD.Loss
 {
     public static class Loss
     {
-        public static TFloat MSE<TFloat>(TFloat[] values, TFloat[] expected)
-            where TFloat : struct
-        {
-            TFloat error = default;
+        //public static TFloat MSE<TFloat>(TFloat[] values, TFloat[] expected)
+        //    where TFloat : struct
+        //{
+        //    TFloat error = default;
 
-            for (int i = 0; i < values.Length; i++)
-            {
-                var d = (dynamic)values[i] - (dynamic)expected[i];
-                error += d * d;
-            }
+        //    for (int i = 0; i < values.Length; i++)
+        //    {
+        //        var d = (dynamic)values[i] - (dynamic)expected[i];
+        //        error += d * d;
+        //    }
 
-            return (dynamic)error / values.Length;
-        }
+        //    return (dynamic)error 
+                
+                
+                
+                
+                
+                
+        //        values.Length;
+        //}
     }
 }

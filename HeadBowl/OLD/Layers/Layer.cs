@@ -58,7 +58,7 @@ namespace HeadBowl.OLD.Layers
         public TFloat[] Backward(TFloat[] expected)
         {
             // Calculate the cost 
-            Cost = Loss.Loss.MSE(Values, expected);
+            //Cost = Loss.Loss.MSE(Values, expected);
 
             var gradients = new TFloat[Size];
             // calculate gradient

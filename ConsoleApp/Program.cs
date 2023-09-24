@@ -1,6 +1,4 @@
-﻿using HeadBowl.OLD.Layers;
-using HeadBowl.OLD.Nets;
-using HeadBowl.OLD.Activations;
+﻿using HeadBowl;
 using HeadBowl.Training_Data;
 
 
@@ -8,21 +6,23 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        var net = new Net<float>(new InputLayer<float>(2),
-            new LayerBuilder< ReLU<float>, float>(10),
-            new LayerBuilder< ReLU<float>, float>(1));
+        ITrainingData<double> traningData = new Xor<double>();
+
+        INet<double> nn = Net<double>.Build(
+            new ReLULayerBuilder<double>(2),
+            new ReLULayerBuilder<double>(50),
+            new ReLULayerBuilder<double>(1));
 
 
-        net.Forward(Xor<float>.Data[0].Inputs);
-
-        for (int i = 0;  i < 10000; i++)
+        for (int i = 0;  i < 100000; i++)
         {
-            foreach (var data in Xor<float>.Data)
+            foreach (var data in traningData.Data)
             {
-                net.Backward(data.Inputs, data.Expected);
+                nn.Train(data.Inputs, data.Expected);
             }
-        }
 
-        net.Forward(Xor<float>.Data[0].Inputs);
+            if (i % 1000 == 0)
+                Console.WriteLine(nn.Cost);
+        }
     }
 }
