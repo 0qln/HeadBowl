@@ -22,13 +22,45 @@ namespace HeadBowl.Layers
     {
         public static ILayerBuilder<TPrecision> Create(ActivationType activation, int size)
         {
-            return activation switch
+            return new LayerBuilder<TPrecision>(size, activation);
+        }
+    }
+
+    public class LayerBuilder<TPrecision> : ILayerBuilder<TPrecision>
+    {
+        public int Size => _instance.Size;
+
+        private readonly ILayer<TPrecision> _instance;
+        private ILayer<TPrecision>? _next, _prev;
+
+
+        public LayerBuilder(int size, ActivationType activation)
+        {
+            _instance = activation switch
             {
-                ActivationType.ReLU => new ReLULayerBuilder<TPrecision>(size),
-                ActivationType.Sigmoid => new SigmoidLayerBuilder<TPrecision>(size),
+                ActivationType.Sigmoid =>
+                    typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new SigmoidLayer_64bit(size)
+                    : throw new NotImplementedException(),
+
+                ActivationType.ReLU =>
+                    typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new ReLULayer_64bit(size)
+                    : throw new NotImplementedException(),
 
                 _ => throw new NotImplementedException()
             };
+        }
+
+        void ILayerBuilder<TPrecision>.SetNext(ILayer<TPrecision>? layer) => _next = layer;
+        void ILayerBuilder<TPrecision>.SetPrev(ILayer<TPrecision>? layer) => _prev = layer;
+
+        ILayer<TPrecision> ILayerBuilder<TPrecision>.Build()
+        {
+            _instance._InitInNet(_prev, _next);
+            return _instance;
+        }
+        ILayer<TPrecision> ILayerBuilder<TPrecision>.Instance()
+        {
+            return _instance;
         }
     }
 
