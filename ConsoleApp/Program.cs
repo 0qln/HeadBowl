@@ -16,7 +16,7 @@ public static class Program
             Layer<double>.Create(ActivationType.Sigmoid, size: 1));
 
 
-        for (int i = 0;  i < 100000; i++)
+        for (int i = 0;  i < 300000; i++)
         {
             foreach (var data in traningData.Data)
                 nn.Train(data.Inputs, data.Expected);

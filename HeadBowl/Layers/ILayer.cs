@@ -18,15 +18,8 @@ namespace HeadBowl.Layers
         internal void _InitInNet(ILayer<T>? prev, ILayer<T>? next);
     }
 
-    public class Layer<TPrecision>
-    {
-        public static ILayerBuilder<TPrecision> Create(ActivationType activation, int size)
-        {
-            return new LayerBuilder<TPrecision>(size, activation);
-        }
-    }
 
-    public class LayerBuilder<TPrecision> : ILayerBuilder<TPrecision>
+    public class Layer<TPrecision> : ILayerBuilder<TPrecision>
     {
         public int Size => _instance.Size;
 
@@ -34,7 +27,7 @@ namespace HeadBowl.Layers
         private ILayer<TPrecision>? _next, _prev;
 
 
-        public LayerBuilder(int size, ActivationType activation)
+        private Layer(int size, ActivationType activation)
         {
             _instance = activation switch
             {
@@ -48,6 +41,10 @@ namespace HeadBowl.Layers
 
                 _ => throw new NotImplementedException()
             };
+        }
+        public static Layer<TPrecision> Create(ActivationType activation, int size)
+        {
+            return new Layer<TPrecision>(size, activation);
         }
 
         void ILayerBuilder<TPrecision>.SetNext(ILayer<TPrecision>? layer) => _next = layer;
