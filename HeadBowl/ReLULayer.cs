@@ -17,6 +17,8 @@ namespace HeadBowl
         public T[,] Weights { get; }
         public T[] Activations { get; }
         public T[] Gradients { get; }
+        public bool IsOutputLayer { get; }
+        public bool IsInputLayer { get; }
 
         public void Forward(in T[]? nnInputs = null);
         public void GenerateGradients(in T[]? expectedNNOutputs = null);
@@ -124,6 +126,8 @@ namespace HeadBowl
         public TPrecision[,] Weights => _layer.Weights;
         public TPrecision[] Activations { get => _layer.Activations; }
         public TPrecision[] Gradients => _layer.Gradients;
+        public bool IsOutputLayer => _layer.IsOutputLayer;
+        public bool IsInputLayer => _layer.IsInputLayer;
 
         private ILayer<TPrecision> _layer;
 
@@ -176,28 +180,31 @@ namespace HeadBowl
 
         private ILayer<Double>? _prevLayer, _nextLayer;
 
-        public bool IsInputLayer() => _prevLayer is null;
-        public bool IsOutputLayer() => _nextLayer is null;
+        public bool IsInputLayer => _prevLayer is null;
+        public bool IsOutputLayer => _nextLayer is null;
 
 
-        public ReLULayer_64bit(
-            int size,
-            ILayer<Double> prevLayer,
-            ILayer<Double> nextLayer)
+        public ReLULayer_64bit(int size, ILayer<Double>? prevLayer, ILayer<Double>? nextLayer)
         {
             _size = size;
-            InitSizeDependencies();
+            _biases = Init<double>.Biases(_size);
+            _activations = new double[_size];
+            _gradients = new double[_size];
+            _lRates = Init<double>.LearningRates(_size);
 
             _prevLayer = prevLayer;
             _nextLayer = nextLayer;
-            _weights = Init<double>.Weights(size, prevLayer.Size);
+            _weights = Init<double>.Weights(size, prevLayer?.Size ?? 0);
         }
 
-        public ReLULayer_64bit(
-            int size)
+        public ReLULayer_64bit(int size)
         {
             _size = size;
-            InitSizeDependencies();
+            _biases = Init<double>.Biases(_size);
+            _activations = new double[_size];
+            _gradients = new double[_size];
+            _lRates = Init<double>.LearningRates(_size);
+            _weights = Init<double>.Weights(size, 0);
         }
 
         
@@ -210,14 +217,14 @@ namespace HeadBowl
 
         public void Forward(in double[]? nnInputs = null)
         {
-            double[] inputs = IsInputLayer() ? nnInputs! : _prevLayer!.Activations;
+            double[] inputs = IsInputLayer ? nnInputs! : _prevLayer!.Activations;
 
             for (int node = 0; node < _size; node++)
             {
                 _activations[node] = _biases[node];
 
                 for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
-                    _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode]; //_weights breaks here
+                    _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode];
 
                 _activations[node] = Activation(_activations[node]);
             }
@@ -225,7 +232,7 @@ namespace HeadBowl
 
         public void GenerateGradients(in double[]? expectedNNOutputs = null)
         {
-            if (IsOutputLayer())
+            if (IsOutputLayer)
             {
                 for (int node = 0; node < _size; node++)
                 {
@@ -246,7 +253,7 @@ namespace HeadBowl
 
         public void ApplyGradients()
         {
-            if (!IsInputLayer())
+            if (!IsInputLayer)
             {
                 for (int node = 0; node < _size; node++)
                 {
@@ -254,7 +261,6 @@ namespace HeadBowl
 
                     for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
                         _weights[node, prevLayerNode] -= Math.Clamp(_gradients[node] * _prevLayer.Activations[prevLayerNode] * _lRates[node], -1e50, 1e50);
-
                 }
             }
         }
@@ -264,14 +270,6 @@ namespace HeadBowl
             _prevLayer = prev;
             _nextLayer = next;
             _weights = Init<double>.Weights(_size, _prevLayer?.Size ?? 0);
-        }
-
-        private void InitSizeDependencies()
-        {
-            _biases = Init<double>.Biases(_size);
-            _activations = new double[_size];
-            _gradients = new double[_size];
-            _lRates = Init<double>.LearningRates(_size);
         }
     }
 
