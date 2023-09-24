@@ -4,11 +4,10 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HeadBowl.Layers;
 
 namespace HeadBowl
 {
-
-
     public interface INet<T>
     {
         public T Cost { get; }
