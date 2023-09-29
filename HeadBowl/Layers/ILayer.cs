@@ -29,10 +29,14 @@ namespace HeadBowl.Layers
         public T[,,]? FeatureMaps { get; }
 
         public void Forward(in T[,,]? nnInputs = null);
+        public void GenerateGradients(in T[,,]? expectedNNOutputs = null);
+        public void ApplyGradients();
     }
 
     internal abstract class ConvLayer_64bit : IConvLayer<double>
     {
+
+        private double[,,] _gradients; // filter, , filterDepth ??
         private double[,,,] _weights; // filter, extend, extend, filterDepth
         private double[] _biases; // filter
         private double[,,] _activations; // filter, transformed input x, transformed input y
@@ -54,12 +58,12 @@ namespace HeadBowl.Layers
 
         public int ZeroPaddingAmount => _paddingAmount;
 
-        public bool IsOutputLayer => throw new NotImplementedException();
-        public bool IsInputLayer => throw new NotImplementedException();
+        public bool IsInputLayer => _prevLayer is null;
+        public bool IsOutputLayer => _nextLayer is null;
 
         public double[,,] FeatureMaps => _activations;
 
-        private IConvLayer<double>? _prev, _next;
+        private IConvLayer<double>? _prevLayer, _nextLayer;
 
 
 
@@ -71,8 +75,8 @@ namespace HeadBowl.Layers
             _stride = stride;
             _paddingAmount = zeroPadding;
 
-            _weights = new double[_filters, _filterExtend, _filterExtend, _filterDepth];
-            _biases = new double[_filters];
+            _weights = Init<double>.Random(_filters, _filterExtend, _filterExtend, _filterDepth);
+            _biases = Init<double>.Random(_filters);
         }
 
         abstract public double Activation(double input);
@@ -103,7 +107,7 @@ namespace HeadBowl.Layers
         {
             // dertermine the input, might be input layer or hidden (then it's the activations from the prev layer)
             double[,,] origInputs = nnInputs ?? 
-                (_prev ?? throw new Exception("Prev layer not specified and no inputs provided"))
+                (_prevLayer ?? throw new Exception("Prev layer not specified and no inputs provided"))
                 .FeatureMaps ?? throw new Exception("Prev layer has not been computed yet");
 
             // init inputs with zero padding
@@ -137,6 +141,41 @@ namespace HeadBowl.Layers
                 _activations[outputDepth, outputX, outputY] = Activation(_activations[outputDepth, outputX, outputY]);
             }            
         }
+
+        public void GenerateGradients(in double[,,]? expectedNNOutputs = null)
+        {
+            _gradients = new double[_filters, _filterExtend, _filterExtend, _filterDepth];
+
+            if (IsOutputLayer)
+            {
+                for (int outputDepth = 0; outputDepth < _filters; outputDepth++)
+                for (int outputX = 0; outputX < _activations.GetLength(1); outputX++)
+                for (int outputY = 0; outputY < _activations.GetLength(2); outputY++)
+                {
+                    _gradients
+                }
+                for (int node = 0; node < _size; node++)
+                {
+                    _gradients[node] = Math.Pow(_activations[node] - expectedNNOutputs![node], 2);
+                }
+            }
+            else
+            {
+                for (int node = 0; node < _size; node++)
+                {
+                    for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
+                        _gradients[node] += _nextLayer.Gradients[nextLayerNode] * _nextLayer.Weights[nextLayerNode, node];
+
+                    _gradients[node] *= ActivationDerivative(_activations[node]);
+                }
+            }
+        }
+
+        public void ApplyGradients()
+        {
+            throw new NotImplementedException();
+        }
+
     }
 
     public interface IRecurrentLayer<T>
@@ -234,23 +273,23 @@ namespace HeadBowl.Layers
         public LayerBase_64bit(int size, ILayer<double>? prevLayer, ILayer<double>? nextLayer)
         {
             _size = size;
-            _biases = Init<double>.Biases(_size);
+            _biases = Init<double>.Random(_size);
             _activations = new double[_size];
             _gradients = new double[_size];
             _lRates = Init<double>.LearningRates(_size);
 
             _prevLayer = prevLayer;
             _nextLayer = nextLayer;
-            _weights = Init<double>.Weights(size, prevLayer?.Size ?? 0);
+            _weights = Init<double>.Random(size, prevLayer?.Size ?? 0);
         }
         public LayerBase_64bit(int size)
         {
             _size = size;
-            _biases = Init<double>.Biases(_size);
+            _biases = Init<double>.Random(_size);
             _activations = new double[_size];
             _gradients = new double[_size];
             _lRates = Init<double>.LearningRates(_size);
-            _weights = Init<double>.Weights(size, 0);
+            _weights = Init<double>.Random(size, 0);
         }
 
 
@@ -312,7 +351,7 @@ namespace HeadBowl.Layers
         {
             _prevLayer = prev;
             _nextLayer = next;
-            _weights = Init<double>.Weights(_size, _prevLayer?.Size ?? 0);
+            _weights = Init<double>.Random(_size, _prevLayer?.Size ?? 0);
         }
     }
 }
