@@ -28,7 +28,6 @@ namespace HeadBowl.Layers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override double ActivationDerivative(double input) => input < 0 ? 0 : 1;
-
     }
 
 }
