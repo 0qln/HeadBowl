@@ -11,9 +11,9 @@ public static class Program
         ITrainingData<double> traningData = new Xor<double>();
 
         INet<double> nn = Net<double>.Build(
-            Layer<double>.Create(ActivationType.Sigmoid, size: 2),
-            Layer<double>.Create(ActivationType.Sigmoid, size: 50),
-            Layer<double>.Create(ActivationType.Sigmoid, size: 1));
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 2),
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 3),
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1));
 
 
         for (int i = 0;  i < 300000; i++)

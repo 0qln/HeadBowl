@@ -11,8 +11,8 @@ namespace HeadBowl
     public interface INet<T>
     {
         public T Cost { get; }
-        public void Train(double[] inputs, double[] expectedOutputs);
-        public T[] Forward(double[] inputs);
+        public void Train(T[] inputs, T[] expectedOutputs);
+        public T[] Forward(Array inputs);
     }
 
 
@@ -54,12 +54,12 @@ namespace HeadBowl
             return new Net<TPrecision>(layers.ToArray());
         }
 
-        public void Train(double[] inputs, double[] expectedOutputs)
+        public void Train(TPrecision[] inputs, TPrecision[] expectedOutputs)
         {
             _net.Train(inputs, expectedOutputs);
         }
 
-        public TPrecision[] Forward(double[] inputs)
+        public TPrecision[] Forward(Array inputs)
         {
             return _net.Forward(inputs);
         }
@@ -68,7 +68,7 @@ namespace HeadBowl
 
     internal class Net_64bit : INet<double>
     {
-        public double[] Outputs => _layers[^1].Activations;
+        public Array? Outputs => _layers[^1].Activations;
         public double Cost => _lastCost;
 
         private ILayer<double>[] _layers;
@@ -80,7 +80,7 @@ namespace HeadBowl
             _layers = layers;
         }
 
-        public void MSE(double[] outputs, double[] expected, out double result)
+        public static void MSE(double[] outputs, double[] expected, out double result)
         {
             result = 0;
             for (int i = 0; i < outputs.Length; i++)
@@ -91,7 +91,11 @@ namespace HeadBowl
         public void Train(double[] inputs, double[] expectedOutputs)
         {
             Forward(inputs);
-            MSE(_layers[^1].Activations, expectedOutputs, out _lastCost);
+
+            MSE(((double[])_layers[^1].Activations!) 
+                    ?? throw new Exception("Last layer has to have an onedimensional array as output. Consider rethinking your network design."), 
+                expectedOutputs, 
+                out _lastCost);
 
             _layers[^1].GenerateGradients(expectedOutputs);
             _layers[^1].ApplyGradients();
@@ -102,16 +106,17 @@ namespace HeadBowl
             }
         }
 
-        public double[] Forward(double[] inputs)
+        public double[] Forward(Array inputs)
         {
-            for (int i = 0; i < _layers[0].Size; i++)            
-                _layers[0].Activations[i] = inputs[i];
+            _layers[0].Activations = inputs;
             
             for (int layer =  1; layer < _layers.Length; layer++)
             {
                 _layers[layer].Forward();
             }
-            return _layers[^1].Activations;
+
+            return ((double[])_layers[^1].Activations!) 
+                ?? throw new Exception("Last layer has to have an onedimensional array as output. Consider rethinking your network design.");
         }
     }
 }
