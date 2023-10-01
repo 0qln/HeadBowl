@@ -97,7 +97,8 @@ namespace HeadBowl
                 expectedOutputs, 
                 out _lastCost);
 
-            _layers[^1].GenerateGradients(expectedOutputs);
+            _layers[^1].GradientDependencies = expectedOutputs;
+            _layers[^1].GenerateGradients();
             _layers[^1].ApplyGradients();
             for (int layer = _layers.Length-2; layer >= 0; layer--)
             {

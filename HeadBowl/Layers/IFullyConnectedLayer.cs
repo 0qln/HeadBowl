@@ -4,6 +4,7 @@ namespace HeadBowl.Layers
 {
     public interface IFullyConnectedLayer<T> : ILayer<T>
     {
+
     }
 
     internal abstract class FullyConnectedLayer_64bit : IFullyConnectedLayer<double>
@@ -22,6 +23,52 @@ namespace HeadBowl.Layers
         public bool IsInputLayer => _prevLayer is null;
         public bool IsOutputLayer => _nextLayer is null;
 
+        protected double[]? _inputs;
+        public Array Inputs
+        {
+            set
+            {
+                if (value.GetType() != typeof(double[]))
+                {
+                    throw new ArgumentException();
+                }
+
+                _inputs = value as double[];
+            }
+            protected get
+            {
+                return IsInputLayer ? 
+                    _inputs ?? throw new Exception("No inputs provided.") :
+                    _prevLayer!.Activations ?? throw new Exception("Previous layer has not been computed yet.");
+            }
+        }
+        protected double[]? _expectedOutputs;
+        public Array GradientDependencies
+        {
+            set
+            {
+                if (value.GetType() != typeof(double[]))
+                {
+                    throw new ArgumentException();
+                }
+
+                _expectedOutputs = value as double[];
+            }
+            protected get
+            {
+                if (IsOutputLayer)
+                {
+                    return _expectedOutputs ?? throw new Exception("No expected outputs provided.");
+                }
+                else
+                {
+                    Array ret = _nextLayer!.Gradients ?? throw new Exception("Next layers gradients have not been calculated yet.");
+                    double[] specRet = ret as double[] ?? throw new NotImplementedException("Backpropagation between FC and non FC layers have not been implemented yet");
+                    return specRet;
+                }
+            }
+        }
+
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
 
@@ -37,12 +84,12 @@ namespace HeadBowl.Layers
         }
 
 
-        public void Forward(in double[]? nnInputs = null)
+        public void Forward()
         {
             // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
             //       to be able to have variable dimensions) to a arrays of with the specific required
             //       dimensions.
-            double[] inputs = IsInputLayer ? nnInputs! : ((double[])_prevLayer!.Activations);
+            double[] inputs = (double[])Inputs;
 
             for (int node = 0; node < _size; node++)
             {
@@ -55,13 +102,13 @@ namespace HeadBowl.Layers
             }
         }
 
-        public void GenerateGradients(in double[]? expectedNNOutputs = null)
+        public void GenerateGradients()
         {
             if (IsOutputLayer)
             {
                 for (int node = 0; node < _size; node++)
                 {
-                    _gradients[node] = Math.Pow(_activations[node] - expectedNNOutputs![node], 2);
+                    _gradients[node] = Math.Pow(_activations[node] - ((double[])GradientDependencies)[node], 2);
                 }
             }
             else
@@ -69,10 +116,10 @@ namespace HeadBowl.Layers
                 for (int node = 0; node < _size; node++)
                 {
                     for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
-                        // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
+                        // TODO: we might want to add a clean way to transform next layer arrays (which are supposed
                         //       to be able to have variable dimensions) to a arrays of with the specific required
                         //       dimensions.
-                        _gradients[node] += ((double[])_nextLayer.Gradients)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
+                        _gradients[node] += ((double[])GradientDependencies)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
 
                     _gradients[node] *= ActivationDerivative(_activations[node]);
                 }
@@ -111,7 +158,7 @@ namespace HeadBowl.Layers
 
 
 
-    internal class FullyConnectedSigmoidLayer_64bit : FullyConnectedLayer_64bit, IFullyConnectedLayer<double>
+    internal class FullyConnectedSigmoidLayer_64bit : FullyConnectedLayer_64bit
     {
         public FullyConnectedSigmoidLayer_64bit(int size)
             : base(size)

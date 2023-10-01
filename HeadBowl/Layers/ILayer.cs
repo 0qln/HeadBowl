@@ -13,13 +13,15 @@ namespace HeadBowl.Layers
         int Size { get; }
 
         internal void _InitInNet(ILayer<T>? prev, ILayer<T>? next);
-        void Forward(in T[]? nnInputs = null);
-        void GenerateGradients(in T[]? expectedFinalOutputs = null);
+        void Forward();
+        void GenerateGradients();
         void ApplyGradients();
+
+        Array Inputs { set; }
+        Array GradientDependencies { set; }
 
         Array? Activations { get; set; }
         Array? Gradients { get; }
         Array Weights { get; }
     }
-
 }

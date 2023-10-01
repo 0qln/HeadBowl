@@ -46,7 +46,7 @@ namespace HeadBowl.Layers
 
         private int _paddingAmount;
 
-        private IConvLayer<double>? _prevLayer, _nextLayer;
+        private ILayer<double>? _prevLayer, _nextLayer;
 
 
         public int Size { get; }
@@ -61,6 +61,53 @@ namespace HeadBowl.Layers
 
         public bool IsInputLayer => _prevLayer is null;
         public bool IsOutputLayer => _nextLayer is null;
+
+
+        protected double[,,]? _inputs;
+        public Array Inputs
+        {
+            set
+            {
+                if (value.GetType() != typeof(double[]))
+                {
+                    throw new ArgumentException();
+                }
+
+                _inputs = value as double[,,];
+            }
+            protected get
+            {
+                return IsInputLayer ?
+                    _inputs ?? throw new Exception("No inputs provided.") :
+                    _prevLayer!.Activations ?? throw new Exception("Previous layer has not been computed yet.");
+            }
+        }
+        protected double[,,]? _expectedOutputs;
+        public Array GradientDependencies
+        {
+            set
+            {
+                if (value.GetType() != typeof(double[,,]))
+                {
+                    throw new ArgumentException();
+                }
+
+                _expectedOutputs = value as double[,,];
+            }
+            protected get
+            {
+                if (IsOutputLayer)
+                {
+                    return _expectedOutputs ?? throw new Exception("No expected outputs provided.");
+                }
+                else
+                {
+                    Array ret = _nextLayer!.Gradients ?? throw new Exception("Next layers gradients have not been calculated yet.");
+                    double[] specRet = ret as double[] ?? throw new NotImplementedException("Backpropagation between FC and non FC layers have not been implemented yet");
+                    return specRet;
+                }
+            }
+        }
 
 
         abstract public double Activation(double input);
@@ -101,12 +148,10 @@ namespace HeadBowl.Layers
         /// Dimension 2: Height
         /// </param>
         /// <exception cref="ArgumentNullException"></exception>
-        public void Forward(in double[]? nnInputs = null)
+        public void Forward()
         {
             // dertermine the input, might be input layer or hidden (then it's the activations from the prev layer)
-            double[,,] origInputs = (double[,,])(nnInputs ??
-                (_prevLayer ?? throw new Exception("Prev layer not specified and no inputs provided"))
-                    .Activations ?? throw new Exception("Prev layer has not been computed yet"));
+            double[,,] origInputs = (double[,,])Inputs;
 
             // init inputs with zero padding
             var inputs = new double[_filterDepth, origInputs.GetLength(1) + ZeroPaddingAmount, origInputs.GetLength(2) + ZeroPaddingAmount];
@@ -140,7 +185,7 @@ namespace HeadBowl.Layers
                     }
         }
 
-        public void GenerateGradients(in double[]? expectedNNOutputs = null)
+        public void GenerateGradients()
         {
             throw new NotImplementedException();
         }
@@ -152,7 +197,8 @@ namespace HeadBowl.Layers
 
         void ILayer<double>._InitInNet(ILayer<double>? prev, ILayer<double>? next)
         {
-            throw new NotImplementedException();
+            _prevLayer = prev;
+            _nextLayer = next;
         }
     }
 
