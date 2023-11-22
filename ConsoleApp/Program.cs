@@ -1,8 +1,9 @@
-﻿using HeadBowl;
-using HeadBowl.Training_Data;
+﻿using HeadBowl.Training_Data;
 using HeadBowl.Layers;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using HeadBowl.Nets;
+using HeadBowl.Optimizers;
 
 
 //
@@ -21,16 +22,15 @@ public static class Program
         traningData = new Xor<double>();
 
         nn = Net<double>.Build(
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 2),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1000),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1));
+            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 2),
+            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 300),
+            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 1000),
+            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 1));
     }
 
 
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run<BenchmarkNets>();
     }
 
 

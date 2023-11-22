@@ -17,4 +17,13 @@ namespace HeadBowl.Layers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double ActivationDerivative(double input) => input * (1 - input); // when this is used, the input is already sigmoided.
     }
+
+    public static class Sigmoid_32bit
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Activation(float input) => 1f / (float)(1 + Math.Exp(-input));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ActivationDerivative(float input) => input * (1f - input); // when this is used, the input is already sigmoided.
+    }
 }

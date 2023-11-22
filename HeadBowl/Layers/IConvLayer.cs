@@ -1,4 +1,5 @@
 ﻿using HeadBowl.Helpers;
+using HeadBowl.Optimizers;
 using System.Diagnostics;
 
 namespace HeadBowl.Layers
@@ -112,6 +113,8 @@ namespace HeadBowl.Layers
         public bool EnableParallelProcessing { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public bool ExperimentalFeature { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+        public IOptimizer<double> Optimizer => throw new NotImplementedException();
+
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
 
@@ -209,6 +212,11 @@ namespace HeadBowl.Layers
         {
             _prevLayer = prev;
             _nextLayer = next;
+        }
+
+        public void ApplyOptimizer()
+        {
+            throw new NotImplementedException();
         }
     }
 
