@@ -7,14 +7,31 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Optimizers
 {
-    public interface IOptimizerType
+    public interface IOptimizer
     {
-        public IOptimizer<TPrecision> GetInstance<TPrecision>();
     }
 
-
-    public interface IOptimizer<T>
+    public interface IOptimizer<TPrecision> : IOptimizer
     {
-        void Optimize(ILayer<T> data);
+        public void Optimize(ILayer<TPrecision> data);
+    }
+
+    public static class Optimizers
+    {
+        public static IOptimizer None()
+        {
+            return new None();
+        }
+
+        public static IAdam<TPrecision> Adam<TPrecision>(
+            TPrecision alpha,
+            TPrecision beta1,
+            TPrecision beta2,
+            TPrecision epsilon)
+        {
+            return
+                typeof(TPrecision) == typeof(double) ? (IAdam<TPrecision>)new Adam_64bit((dynamic)alpha!, (dynamic)beta1!, (dynamic)beta2!, (dynamic)epsilon!)
+                : throw new NotImplementedException();
+        }
     }
 }

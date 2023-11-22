@@ -5,8 +5,11 @@ using System.IO.Pipes;
 
 namespace HeadBowl.Layers
 {
-    public interface ILayer<T>
+    public interface ILayer { }
+
+    public interface ILayer<T> : ILayer
     {
+        IActivation<T> Activation { get; }
         IOptimizer<T> Optimizer { get; }
 
         bool IsOutputLayer { get; }
@@ -18,9 +21,6 @@ namespace HeadBowl.Layers
         int Size { get; }
 
         internal void _InitInNet(ILayer<T>? prev, ILayer<T>? next);
-        
-        abstract public T Activation(T input);
-        abstract public T ActivationDerivative(T input);
 
         // 1.
         void Forward();
@@ -38,5 +38,7 @@ namespace HeadBowl.Layers
         Array? Activations { get; set; }
         Array? Gradients { get; }
         Array Weights { get; }
+
+        Array LearningRates { get; }
     }
 }

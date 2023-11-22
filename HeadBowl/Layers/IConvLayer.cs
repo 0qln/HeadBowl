@@ -115,6 +115,10 @@ namespace HeadBowl.Layers
 
         public IOptimizer<double> Optimizer => throw new NotImplementedException();
 
+        IActivation<double> ILayer<double>.Activation => throw new NotImplementedException();
+
+        public Array LearningRates => throw new NotImplementedException();
+
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
 

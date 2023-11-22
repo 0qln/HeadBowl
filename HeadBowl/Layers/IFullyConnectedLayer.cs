@@ -14,7 +14,7 @@ namespace HeadBowl.Layers
 
 
 
-    internal abstract class FullyConnectedLayer_64bit : IFullyConnectedLayer<double>
+    internal class FullyConnectedLayer_64bit : IFullyConnectedLayer<double>
     // Regarding the Array casting of the:
     // We might want to add a clean way to transform next layer arrays (which are supposed
     // to be able to have variable dimensions) to a arrays of with the specific required
@@ -41,9 +41,12 @@ namespace HeadBowl.Layers
         protected double[] _biases, _activations, _lRates, _gradients;
 
         protected ILayer<double>? _prevLayer, _nextLayer;
-        protected readonly IOptimizer<double> _optimizer;
 
         public IOptimizer<double> Optimizer => _optimizer;
+        protected readonly IOptimizer<double> _optimizer;
+
+        public IActivation<double> Activation => _activation;
+        protected readonly IActivation<double> _activation;
 
         public bool IsInputLayer => _prevLayer is null;
         public bool IsOutputLayer => _nextLayer is null;
@@ -97,13 +100,11 @@ namespace HeadBowl.Layers
         public bool EnableParallelProcessing { get; set; }
         public bool ExperimentalFeature { get; set; }
 
+        public Array LearningRates => _lRates;
 
-        abstract public double Activation(double input);
-        abstract public double ActivationDerivative(double input);
-
-
-        public FullyConnectedLayer_64bit(int size, IOptimizer<double> optimizer)
+        public FullyConnectedLayer_64bit(int size, IActivation<double> activation, IOptimizer<double> optimizer)
         {
+            _activation = activation;
             _optimizer = optimizer;
             _size = size;
             _biases = Init<double>.Random(_size);
@@ -134,7 +135,7 @@ namespace HeadBowl.Layers
                         for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
                             activations[node] += weights[node, prevLayerNode] * inputs[prevLayerNode];
 
-                        activations[node] = Activation(activations[node]);
+                        activations[node] = _activation.Activation(activations[node]);
                     });
                 }
             }
@@ -157,7 +158,7 @@ namespace HeadBowl.Layers
                         for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
                             activations[node] += weights[node, prevLayerNode] * inputs[prevLayerNode];
 
-                        activations[node] = Activation(activations[node]);
+                        activations[node] = _activation.Activation(activations[node]);
                     }
                 }
             }
@@ -216,7 +217,7 @@ namespace HeadBowl.Layers
                             for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
                                 gradients[node] += gradientDep[nextLayerNode] * nextLayer[nextLayerNode, node];
 
-                            gradients[node] *= ActivationDerivative(activations[node]);
+                            gradients[node] *= _activation.Derivative(activations[node]);
                         });
                     }
                 }
@@ -236,7 +237,7 @@ namespace HeadBowl.Layers
                             for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
                                 gradients[node] += gradientDep[nextLayerNode] * nextLayer[nextLayerNode, node];
 
-                            gradients[node] *= ActivationDerivative(activations[node]);
+                            gradients[node] *= _activation.Derivative(activations[node]);
                         }
                     }
                 }
@@ -305,146 +306,4 @@ namespace HeadBowl.Layers
 
     }
 
-    internal class FullyConnectedSigmoidLayer_64bit : FullyConnectedLayer_64bit
-    {
-        public FullyConnectedSigmoidLayer_64bit(int size, IOptimizer<double> optimizer)
-            : base(size, optimizer)
-        { }
-
-        public override double Activation(double input) => Sigmoid_64bit.Activation(input);
-        public override double ActivationDerivative(double input) => Sigmoid_64bit.ActivationDerivative(input);
-    }
-
-
-    internal class FullyConnectedReLULayer_64bit : FullyConnectedLayer_64bit
-    {
-        public FullyConnectedReLULayer_64bit(int size, IOptimizer<double> optimizer)
-            : base(size, optimizer)
-        { }
-
-        public override double Activation(double input) => ReLU_64bit.Activation(input);
-        public override double ActivationDerivative(double input) => ReLU_64bit.ActivationDerivative(input);
-    }
-
-
-
-    internal abstract class FullyConnectedLayer_32bit : IFullyConnectedLayer<float>
-    {
-        protected readonly IOptimizer<float> _optimizer;
-        protected readonly int _size;
-        protected readonly float[] _biases, _activations, _gradients, _lRates;
-        protected readonly float[,] _weights;
-
-        public IOptimizer<float> Optimizer => throw new NotImplementedException();
-
-        public bool IsOutputLayer => throw new NotImplementedException();
-
-        public bool IsInputLayer => throw new NotImplementedException();
-
-        public bool EnableParallelProcessing { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public bool ExperimentalFeature { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public int Size => throw new NotImplementedException();
-
-        public Array Inputs { set => throw new NotImplementedException(); }
-        public Array GradientDependencies { set => throw new NotImplementedException(); }
-        public Array? Activations { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public Array? Gradients => throw new NotImplementedException();
-
-        public Array Weights => throw new NotImplementedException();
-
-        IOptimizer<float> ILayer<float>.Optimizer => throw new NotImplementedException();
-
-        bool ILayer<float>.IsOutputLayer => throw new NotImplementedException();
-
-        bool ILayer<float>.IsInputLayer => throw new NotImplementedException();
-
-        bool ILayer<float>.EnableParallelProcessing { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        bool ILayer<float>.ExperimentalFeature { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        int ILayer<float>.Size => throw new NotImplementedException();
-
-        Array ILayer<float>.Inputs { set => throw new NotImplementedException(); }
-        Array ILayer<float>.GradientDependencies { set => throw new NotImplementedException(); }
-        Array? ILayer<float>.Activations { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        Array? ILayer<float>.Gradients => throw new NotImplementedException();
-
-        Array ILayer<float>.Weights => throw new NotImplementedException();
-
-
-        public FullyConnectedLayer_32bit(int size, IOptimizer<float> optimizer)
-        {
-            _optimizer = optimizer;
-            _size = size;
-            _biases = Init<float>.Random(_size);
-            _activations = new float[_size];
-            _gradients = new float[_size];
-            _lRates = Init<float>.LearningRates(_size);
-            _weights = Init<float>.Random(size, 0);
-        }
-
-
-        abstract public float Activation(float input);
-        abstract public float ActivationDerivative(float input);
-
-        public void ApplyGradients()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ApplyOptimizer()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Forward()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GenerateGradients()
-        {
-            throw new NotImplementedException();
-        }
-
-        void ILayer<float>.ApplyGradients()
-        {
-            throw new NotImplementedException();
-        }
-
-        void ILayer<float>.ApplyOptimizer()
-        {
-            throw new NotImplementedException();
-        }
-
-        void ILayer<float>.Forward()
-        {
-            throw new NotImplementedException();
-        }
-
-        void ILayer<float>.GenerateGradients()
-        {
-            throw new NotImplementedException();
-        }
-
-        void ILayer<float>._InitInNet(ILayer<float>? prev, ILayer<float>? next)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
-
-    internal class FullyConnectedSigmoidLayer_32bit : FullyConnectedLayer_32bit
-    {
-        public FullyConnectedSigmoidLayer_32bit(int size, IOptimizer<float> optimizer)
-            : base(size, optimizer)
-        { }
-
-
-        public override float Activation(float input) => Sigmoid_32bit.Activation(input);
-        public override float ActivationDerivative(float input) => Sigmoid_32bit.ActivationDerivative(input);
-    }
 }

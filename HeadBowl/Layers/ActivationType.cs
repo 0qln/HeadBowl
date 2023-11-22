@@ -1,8 +1,14 @@
-﻿namespace HeadBowl.Layers
+﻿
+namespace HeadBowl.Layers
 {
-    public enum ActivationType
+    public interface IActivationType
     {
-        ReLU,
-        Sigmoid
+        public IActivation<TPrecision> GetInstance<TPrecision>();
+    }
+
+    public interface IActivation<TPrecision>
+    {
+        public TPrecision Activation(TPrecision value);
+        public TPrecision Derivative(TPrecision value);
     }
 }

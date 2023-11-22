@@ -1,4 +1,5 @@
 ﻿using HeadBowl.Helpers;
+using HeadBowl.Optimizers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -9,21 +10,32 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Layers
 {
-    public static class Sigmoid_64bit
+    public class Sigmoid : IActivationType
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double Activation(double input) => 1 / (1 + Math.Exp(-input));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ActivationDerivative(double input) => input * (1 - input); // when this is used, the input is already sigmoided.
+        public IActivation<TPrecision> GetInstance<TPrecision>()
+        {
+            return
+                typeof(TPrecision) == typeof(double) ? (IActivation<TPrecision>)new Sigmoid_64bit() :
+                typeof(TPrecision) == typeof(float) ? (IActivation<TPrecision>)new Sigmoid_32bit() :
+                throw new NotImplementedException();
+        }
     }
 
-    public static class Sigmoid_32bit
+    internal interface ISigmoid<T> : IActivation<T>
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Activation(float input) => 1f / (float)(1 + Math.Exp(-input));
+        /// <summary>When this is used, the input should be already sigmoided.</summary>
+        public new T Derivative(T input);
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ActivationDerivative(float input) => input * (1f - input); // when this is used, the input is already sigmoided.
+    internal class Sigmoid_64bit : ISigmoid<double>
+    {
+        public double Activation(double input) => 1 / (1 + Math.Exp(-input));
+        public double Derivative(double input) => input * (1 - input); 
+    }
+
+    internal class Sigmoid_32bit : ISigmoid<float>
+    {
+        public float Activation(float input) => 1f / (float)(1 + Math.Exp(-input));
+        public float Derivative(float input) => input * (1f - input);
     }
 }

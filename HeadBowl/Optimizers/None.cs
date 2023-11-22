@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Optimizers
 {
-    public class None : IOptimizer<object?>
+    public class None : IOptimizer
     {
-        public void Optimize(ILayer<object?> data)
+        public void Optimize(ILayer data)
         {
-            throw new NotImplementedException();
         }
     }
 }

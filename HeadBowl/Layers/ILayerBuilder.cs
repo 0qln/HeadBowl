@@ -38,39 +38,31 @@ namespace HeadBowl.Layers
         }
     }
 
-    public class FullyConnectedLayer<TPrecision, TOptimizer> : LayerBuilderBase<TPrecision>
-        where TOptimizer : IOptimizerType, new()
+    public class FullyConnectedLayer<TPrecision, TActivation> : LayerBuilderBase<TPrecision>
+        where TActivation : IActivationType, new()
     {
-        public FullyConnectedLayer(ActivationType activation, int size) 
-            : base(activation switch
-            {
-                ActivationType.Sigmoid =>
-                    typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new FullyConnectedSigmoidLayer_64bit(size, new TOptimizer().GetInstance<double>()) :
-                    typeof(TPrecision) == typeof(float) ? (ILayer<TPrecision>)new FullyConnectedSigmoidLayer_32bit(size, new TOptimizer().GetInstance<float>()) :
-                    throw new NotImplementedException(),
-
-                ActivationType.ReLU =>
-                    typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new FullyConnectedReLULayer_64bit(size, (IOptimizer<double>)new TOptimizer())
-                    : throw new NotImplementedException(),
-
-                _ => throw new NotImplementedException()
-            })
+        public FullyConnectedLayer(IOptimizer<TPrecision> optimizer, int size) 
+            : base(
+                typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new FullyConnectedLayer_64bit(size, new TActivation().GetInstance<double>(), (IOptimizer<double>)optimizer!) :
+                //typeof(TPrecision) == typeof(float) ? (ILayer<TPrecision>)new FullyConnectedSigmoidLayer_32bit(size, new TActivation().GetInstance<float>()) :
+                throw new NotImplementedException()
+            )
         { 
         }
     }
 
-    public class ConvolutionLayer<TPrecision> : LayerBuilderBase<TPrecision>
-    {
-        public ConvolutionLayer(ActivationType activation, int inputDepth, int outputDepth, int filterExtend, int stride, int zeroPadding)
-            : base(activation switch
-            {
-                ActivationType.ReLU =>
-                    typeof(TPrecision) == typeof(double)? (ILayer<TPrecision>) new ConvReLULayer_64bit(inputDepth, outputDepth, filterExtend, stride, zeroPadding)
-                    : throw new NotImplementedException(),
+    //public class ConvolutionLayer<TPrecision> : LayerBuilderBase<TPrecision>
+    //{
+    //    public ConvolutionLayer(ActivationType activation, int inputDepth, int outputDepth, int filterExtend, int stride, int zeroPadding)
+    //        : base(activation switch
+    //        {
+    //            ActivationType.ReLU =>
+    //                typeof(TPrecision) == typeof(double)? (ILayer<TPrecision>) new ConvReLULayer_64bit(inputDepth, outputDepth, filterExtend, stride, zeroPadding)
+    //                : throw new NotImplementedException(),
 
-                _ => throw new NotImplementedException()
-            })
-        { 
-        }
-    }
+    //            _ => throw new NotImplementedException()
+    //        })
+    //    { 
+    //    }s
+    //}
 }

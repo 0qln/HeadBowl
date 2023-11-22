@@ -22,15 +22,16 @@ public static class Program
         traningData = new Xor<double>();
 
         nn = Net<double>.Build(
-            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 2),
-            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 1000),
-            new FullyConnectedLayer<double, Adam>(ActivationType.Sigmoid, size: 1));
+            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 2),
+            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 300),
+            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 1000),
+            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 1));
     }
 
 
     public static void Main(string[] args)
     {
+        BenchmarkRunner.Run<BenchmarkNets>();
     }
 
 
