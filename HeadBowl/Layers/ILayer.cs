@@ -6,9 +6,10 @@ namespace HeadBowl.Layers
 {
     public interface ILayer<T>
     {
-        // Properties
         bool IsOutputLayer { get; }
         bool IsInputLayer { get; }
+
+        bool EnableParallelProcessing { get; set; }
 
         int Size { get; }
 

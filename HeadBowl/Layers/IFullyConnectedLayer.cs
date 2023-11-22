@@ -69,6 +69,8 @@ namespace HeadBowl.Layers
             }
         }
 
+        public bool EnableParallelProcessing { get; set; }
+
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
 
@@ -91,14 +93,29 @@ namespace HeadBowl.Layers
             //       dimensions.
             double[] inputs = (double[])Inputs;
 
-            for (int node = 0; node < _size; node++)
+            if (EnableParallelProcessing)
             {
-                _activations[node] = _biases[node];
+                Parallel.For(0, _size, node =>
+                {
+                    _activations[node] = _biases[node];
 
-                for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
-                    _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode];
+                    for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
+                        _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode];
 
-                _activations[node] = Activation(_activations[node]);
+                    _activations[node] = Activation(_activations[node]);
+                });
+            }
+            else
+            {
+                for (int node = 0; node < _size; node++)
+                {
+                    _activations[node] = _biases[node];
+
+                    for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
+                        _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode];
+
+                    _activations[node] = Activation(_activations[node]);
+                }
             }
         }
 
@@ -106,22 +123,48 @@ namespace HeadBowl.Layers
         {
             if (IsOutputLayer)
             {
-                for (int node = 0; node < _size; node++)
+                if (EnableParallelProcessing)
                 {
-                    _gradients[node] = Math.Pow(_activations[node] - ((double[])GradientDependencies)[node], 2);
+                    Parallel.For(0, _size, node =>
+                    {
+                        _gradients[node] = Math.Pow(_activations[node] - ((double[])GradientDependencies)[node], 2);
+                    });
+                }
+                else
+                {
+                    for (int node = 0; node < _size; node++)
+                    {
+                        _gradients[node] = Math.Pow(_activations[node] - ((double[])GradientDependencies)[node], 2);
+                    }
                 }
             }
             else
             {
-                for (int node = 0; node < _size; node++)
+                if (EnableParallelProcessing)
                 {
-                    for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
-                        // TODO: we might want to add a clean way to transform next layer arrays (which are supposed
-                        //       to be able to have variable dimensions) to a arrays of with the specific required
-                        //       dimensions.
-                        _gradients[node] += ((double[])GradientDependencies)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
+                    Parallel.For(0, _size, node =>
+                    {
+                        for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
+                            // TODO: we might want to add a clean way to transform next layer arrays (which are supposed
+                            //       to be able to have variable dimensions) to a arrays of with the specific required
+                            //       dimensions.
+                            _gradients[node] += ((double[])GradientDependencies)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
 
-                    _gradients[node] *= ActivationDerivative(_activations[node]);
+                        _gradients[node] *= ActivationDerivative(_activations[node]);
+                    });
+                }
+                else
+                {
+                    for (int node = 0; node < _size; node++)
+                    {
+                        for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
+                            // TODO: we might want to add a clean way to transform next layer arrays (which are supposed
+                            //       to be able to have variable dimensions) to a arrays of with the specific required
+                            //       dimensions.
+                            _gradients[node] += ((double[])GradientDependencies)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
+
+                        _gradients[node] *= ActivationDerivative(_activations[node]);
+                    }
                 }
             }
         }
@@ -130,20 +173,41 @@ namespace HeadBowl.Layers
         {
             if (!IsInputLayer)
             {
-                for (int node = 0; node < _size; node++)
+                if (EnableParallelProcessing)
                 {
-                    // We have to clamp the values here, other wise the might result in NaN or Infinity
+                    Parallel.For(0, _size, node =>
+                    {
+                        // We have to clamp the values here, other wise the output might result in NaN or an Infinity
 
-                    _biases[node] -= Math.Clamp(_gradients[node] * _lRates[node], -1e50, 1e50);
+                        _biases[node] -= Math.Clamp(_gradients[node] * _lRates[node], -1e50, 1e50);
 
-                    for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
-                        // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
-                        //       to be able to have variable dimensions) to a arrays of with the specific required
-                        //       dimensions.
-                        //
-                        // we need to clamp the value to a minimum and maximum, other wise NaNs and Inifinities can occur. This might be eliminated 
-                        // later when adding optimizers with weights decay.
-                        _weights[node, prevLayerNode] -= Math.Clamp(_gradients[node] * ((double[])_prevLayer.Activations)[prevLayerNode] * _lRates[node], -1e50, 1e50);
+                        for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
+                            // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
+                            //       to be able to have variable dimensions) to a arrays of with the specific required
+                            //       dimensions.
+                            //
+                            // we need to clamp the value to a minimum and maximum, other wise NaNs and Inifinities can occur. This might be eliminated 
+                            // later when adding optimizers with weights decay.
+                            _weights[node, prevLayerNode] -= Math.Clamp(_gradients[node] * ((double[])_prevLayer.Activations)[prevLayerNode] * _lRates[node], -1e50, 1e50);
+                    });
+                }
+                else
+                {
+                    for (int node = 0; node < _size; node++)
+                    {
+                        // We have to clamp the values here, other wise the output might result in NaN or an Infinity
+
+                        _biases[node] -= Math.Clamp(_gradients[node] * _lRates[node], -1e50, 1e50);
+
+                        for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
+                            // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
+                            //       to be able to have variable dimensions) to a arrays of with the specific required
+                            //       dimensions.
+                            //
+                            // we need to clamp the value to a minimum and maximum, other wise NaNs and Inifinities can occur. This might be eliminated 
+                            // later when adding optimizers with weights decay.
+                            _weights[node, prevLayerNode] -= Math.Clamp(_gradients[node] * ((double[])_prevLayer.Activations)[prevLayerNode] * _lRates[node], -1e50, 1e50);
+                    }
                 }
             }
         }

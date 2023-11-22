@@ -33,7 +33,7 @@ namespace HeadBowl.Layers
 
     internal abstract class ConvLayer_64bit : IConvLayer<double>
     {
-        private double[,,,]? _gradients; // filter, extend, extend, filterDepth
+        private double[,,,] _gradients; // filter, transformed input x, transformed input y
         private double[,,,] _weights; // filter, extend, extend, filterDepth
         private double[] _biases; // filter
         private double[,,]? _activations; // filter, transformed input x, transformed input y
@@ -109,6 +109,7 @@ namespace HeadBowl.Layers
             }
         }
 
+        public bool EnableParallelProcessing { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
@@ -124,6 +125,7 @@ namespace HeadBowl.Layers
 
             _weights = Init<double>.Random(_filters, _filterExtend, _filterExtend, _filterDepth);
             _biases = Init<double>.Random(_filters);
+
         }
 
 
@@ -187,7 +189,14 @@ namespace HeadBowl.Layers
 
         public void GenerateGradients()
         {
-            throw new NotImplementedException();
+            if (IsOutputLayer)
+            {
+                
+            }
+            else
+            {
+
+            }
         }
 
         public void ApplyGradients()
