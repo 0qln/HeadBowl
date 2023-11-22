@@ -7,20 +7,17 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Optimizers
 {
-    public interface IOptimizer
+    public interface IOptimizer<TPrecision> 
     {
-    }
-
-    public interface IOptimizer<TPrecision> : IOptimizer
-    {
+        public IOptimizer<TPrecision> Clone();
         public void Optimize(ILayer<TPrecision> data);
     }
 
     public static class Optimizers
     {
-        public static IOptimizer None()
+        public static IOptimizer<TPrecision> None<TPrecision>()
         {
-            return new None();
+            return new None<TPrecision>();
         }
 
         public static IAdam<TPrecision> Adam<TPrecision>(

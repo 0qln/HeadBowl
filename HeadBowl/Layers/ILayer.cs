@@ -10,7 +10,7 @@ namespace HeadBowl.Layers
     public interface ILayer<T> : ILayer
     {
         IActivation<T> Activation { get; }
-        IOptimizer<T> Optimizer { get; }
+        IOptimizer<T> Optimizer { get; set; }
 
         bool IsOutputLayer { get; }
         bool IsInputLayer { get; }
@@ -32,12 +32,15 @@ namespace HeadBowl.Layers
         void ApplyGradients();
 
 
+        public ILayerBuilder<T> ToRawBuilder();
+
         Array Inputs { set; }
         Array GradientDependencies { set; }
 
         Array? Activations { get; set; }
         Array? Gradients { get; }
-        Array Weights { get; }
+        Array Weights { get; set; }
+        Array Biases { get; set; }
 
         Array LearningRates { get; }
     }

@@ -32,9 +32,10 @@ namespace HeadBowl.Layers
     // even for the spans that are created only to be used once.
     {
         public int Size => _size;
-        public Array Weights => _weights;
         public Array? Activations { get => _activations; set => _activations = (double[])value!; }
         public Array Gradients => _gradients;
+        public Array Weights { get => _weights; set => _weights = (double[,])value; }
+        public Array Biases { get => _biases; set => _biases = (double[])value; }
 
         protected int _size;
         protected double[,] _weights; // [this, prev]
@@ -42,8 +43,7 @@ namespace HeadBowl.Layers
 
         protected ILayer<double>? _prevLayer, _nextLayer;
 
-        public IOptimizer<double> Optimizer => _optimizer;
-        protected readonly IOptimizer<double> _optimizer;
+        protected IOptimizer<double> _optimizer;
 
         public IActivation<double> Activation => _activation;
         protected readonly IActivation<double> _activation;
@@ -101,6 +101,8 @@ namespace HeadBowl.Layers
         public bool ExperimentalFeature { get; set; }
 
         public Array LearningRates => _lRates;
+
+        public IOptimizer<double> Optimizer { get => _optimizer; set => _optimizer = value; }
 
         public FullyConnectedLayer_64bit(int size, IActivation<double> activation, IOptimizer<double> optimizer)
         {
@@ -304,6 +306,14 @@ namespace HeadBowl.Layers
             _weights = Init<double>.Random(_size, _prevLayer?.Size ?? 0);
         }
 
+        public ILayerBuilder<double> ToRawBuilder()
+        {
+            Type genericType = typeof(FullyConnectedLayer<,>);
+            var types = new Type[] { typeof(double), Activation.ActivationType };
+            Type builderType = genericType.MakeGenericType(types);
+            var builder = (LayerBuilderBase<double>)Activator.CreateInstance(builderType, Size, Optimizer.Clone())!;
+            return builder;
+        }
     }
 
 }

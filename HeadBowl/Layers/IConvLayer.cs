@@ -119,6 +119,10 @@ namespace HeadBowl.Layers
 
         public Array LearningRates => throw new NotImplementedException();
 
+        IOptimizer<double> ILayer<double>.Optimizer { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        Array ILayer<double>.Weights { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public Array Biases { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
 
@@ -219,6 +223,11 @@ namespace HeadBowl.Layers
         }
 
         public void ApplyOptimizer()
+        {
+            throw new NotImplementedException();
+        }
+
+        public ILayerBuilder<double> ToRawBuilder()
         {
             throw new NotImplementedException();
         }

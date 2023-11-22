@@ -10,5 +10,6 @@ namespace HeadBowl.Layers
     {
         public TPrecision Activation(TPrecision value);
         public TPrecision Derivative(TPrecision value);
+        public Type ActivationType { get; }
     }
 }

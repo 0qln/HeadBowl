@@ -34,5 +34,10 @@ namespace HeadBowl.Optimizers
         // modify ILayer gradients in adam fashion
         {
         }
+
+        public IOptimizer<double> Clone()
+        {
+            return new Adam_64bit(_alpha, _beta1, _beta2, _epsilon);
+        }
     }
 }

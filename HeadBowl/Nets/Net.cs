@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using HeadBowl.Layers;
+using HeadBowl.Optimizers;
 
 namespace HeadBowl.Nets
 {
@@ -18,30 +19,15 @@ namespace HeadBowl.Nets
         public bool ExperimentalFeature { get; set; }
         public void Train(T[] inputs, T[] expectedOutputs);
         public T[] Forward(Array inputs);
+
+        public ILayer<T>[] Layers { get; }
     }
 
 
 
-    public class Net<TPrecision> : INet<TPrecision>
+    public static class Net
     {
-        public TPrecision Cost => _net.Cost;
-        public bool EnableParallelProcessing { get => _net.EnableParallelProcessing; set => _net.EnableParallelProcessing = value; }
-        public bool ExperimentalFeature { get => _net.ExperimentalFeature; set => _net.ExperimentalFeature = value; }
-
-        private readonly INet<TPrecision> _net;
-
-
-        internal Net(params ILayer<TPrecision>[] layers)
-        {
-            _net =
-                typeof(TPrecision) == typeof(Half) ? throw new NotImplementedException() :
-                typeof(TPrecision) == typeof(float) ? throw new NotImplementedException() :
-                typeof(TPrecision) == typeof(double) ? (INet<TPrecision>)new Net_64bit((ILayer<double>[])layers) :
-                typeof(TPrecision) == typeof(decimal) ? throw new NotImplementedException()
-                : throw new NotImplementedException();
-        }
-
-        public static Net<TPrecision> Build(params ILayerBuilder<TPrecision>[] layerBuilders)
+        public static INet<TPrecision> Build<TPrecision>(params ILayerBuilder<TPrecision>[] layerBuilders)
         {
             var layers = new List<ILayer<TPrecision>>();
 
@@ -58,17 +44,37 @@ namespace HeadBowl.Nets
                 layers.Add(layer.Build());
             }
 
-            return new Net<TPrecision>(layers.ToArray());
+            return 
+                typeof(TPrecision) == typeof(Half) ? throw new NotImplementedException() :
+                typeof(TPrecision) == typeof(float) ? throw new NotImplementedException() :
+                typeof(TPrecision) == typeof(double) ? (INet<TPrecision>)new Net_64bit((ILayer<double>[])layers.ToArray()) :
+                typeof(TPrecision) == typeof(decimal) ? throw new NotImplementedException()
+                : throw new NotImplementedException();
         }
 
-        public void Train(TPrecision[] inputs, TPrecision[] expectedOutputs)
+        public static INet<TPrecision> Clone<TPrecision>(INet<TPrecision> original)
         {
-            _net.Train(inputs, expectedOutputs);
-        }
+            var layerBuilders = new List<ILayerBuilder<TPrecision>>();
+            for (int i = 0; i < original.Layers.Length; i++)
+            {
+                layerBuilders.Add(original.Layers[i].ToRawBuilder());
+            }
+            var copy = Build(layerBuilders.ToArray());
 
-        public TPrecision[] Forward(Array inputs)
+            for (int i = 0; i < copy.Layers.Length; i++)
+            {
+                copy.Layers[i].Weights = (TPrecision[,])original.Layers[i].Weights.Clone();
+                copy.Layers[i].Biases = (TPrecision[])original.Layers[i].Biases.Clone();
+            }
+
+            return copy;
+        }
+        public static void SetOptimizer<TPrecision>(INet<TPrecision> net, IOptimizer<TPrecision> optimizer)
         {
-            return _net.Forward(inputs);
+            foreach (var layer in net.Layers)
+            {
+                layer.Optimizer = optimizer;
+            }
         }
     }
 
@@ -112,6 +118,8 @@ namespace HeadBowl.Nets
         private bool _enableParallelProcessing = false;
         private ILayer<double>[] _layers;
         private double _lastCost = 0;
+
+        public ILayer<double>[] Layers => _layers;
 
 
         public Net_64bit(params ILayer<double>[] layers)

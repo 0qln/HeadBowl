@@ -29,12 +29,14 @@ namespace HeadBowl.Layers
 
     internal class Sigmoid_64bit : ISigmoid<double>
     {
+        public Type ActivationType => typeof(Sigmoid);
         public double Activation(double input) => 1 / (1 + Math.Exp(-input));
         public double Derivative(double input) => input * (1 - input); 
     }
 
     internal class Sigmoid_32bit : ISigmoid<float>
     {
+        public Type ActivationType => typeof(Sigmoid);
         public float Activation(float input) => 1f / (float)(1 + Math.Exp(-input));
         public float Derivative(float input) => input * (1f - input);
     }

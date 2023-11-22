@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Optimizers
 {
-    public class None : IOptimizer
+    public class None<TPrecision> : IOptimizer<TPrecision>
     {
-        public void Optimize(ILayer data)
-        {
-        }
+        public void Optimize(ILayer<TPrecision> data) { }
+        public IOptimizer<TPrecision> Clone() => new None<TPrecision>();
     }
 }

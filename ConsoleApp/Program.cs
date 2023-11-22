@@ -4,6 +4,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using HeadBowl.Nets;
 using HeadBowl.Optimizers;
+using Iced.Intel;
 
 
 //
@@ -21,17 +22,47 @@ public static class Program
     {
         traningData = new Xor<double>();
 
-        nn = Net<double>.Build(
-            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 2),
-            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 300),
-            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 1000),
-            new FullyConnectedLayer<double, Sigmoid>(Optimizers.Adam(0.001, 0.9, 0.999, 10E-8), 1));
+        nn = Net.Build(
+            new FullyConnectedLayer<double, Sigmoid>(2),
+            new FullyConnectedLayer<double, Sigmoid>(3),
+            new FullyConnectedLayer<double, Sigmoid>(2),
+            new FullyConnectedLayer<double, Sigmoid>(1));
+
+        nn.EnableParallelProcessing = false;
     }
 
 
     public static void Main(string[] args)
     {
-        BenchmarkRunner.Run<BenchmarkNets>();
+        var normalNN = Net.Clone(nn);
+        var adamNN = Net.Clone(nn);
+        Net.SetOptimizer(adamNN, Optimizers.Adam(0.001, 0.9, 0.999, 10E-8));
+
+        CompareNets(normalNN, adamNN);
+    }
+
+    public static void CompareNets<TPrecision>(INet<TPrecision> net1, INet<TPrecision> net2)
+    {
+        var traningData = new Xor<TPrecision>();
+
+        for (int i = 0; i < 50; i++)
+        {
+            foreach (var data in traningData.Data)
+            {
+                net1.Train(data.Inputs, data.Expected);
+                net2.Train(data.Inputs, data.Expected);
+            }
+
+            foreach (var item in net1.Forward(traningData.Data[0].Inputs))
+            {
+                Console.WriteLine(item);
+            }
+            foreach (var item in net2.Forward(traningData.Data[0].Inputs))
+            {
+                Console.WriteLine(item);
+            }
+            Console.WriteLine();
+        }
     }
 
 
@@ -57,15 +88,15 @@ public static class Program
         //        nn.Train(data.Inputs, data.Expected);
         //}
 
-        //[Benchmark]
-        //public void NormalParallel()
-        //{
-        //    nn.ExperimentalFeature = false;
-        //    nn.EnableParallelProcessing = true;
+        [Benchmark]
+        public void NormalParallel()
+        {
+            nn.ExperimentalFeature = false;
+            nn.EnableParallelProcessing = true;
 
-        //    foreach (var data in traningData.Data)
-        //        nn.Train(data.Inputs, data.Expected);
-        //}
+            foreach (var data in traningData.Data)
+                nn.Train(data.Inputs, data.Expected);
+        }
 
         //[Benchmark]
         //public void ExperimentalParallel()

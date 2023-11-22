@@ -41,9 +41,10 @@ namespace HeadBowl.Layers
     public class FullyConnectedLayer<TPrecision, TActivation> : LayerBuilderBase<TPrecision>
         where TActivation : IActivationType, new()
     {
-        public FullyConnectedLayer(IOptimizer<TPrecision> optimizer, int size) 
+        public FullyConnectedLayer(int size, IOptimizer<TPrecision>? optimizer = null) 
             : base(
-                typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new FullyConnectedLayer_64bit(size, new TActivation().GetInstance<double>(), (IOptimizer<double>)optimizer!) :
+                typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new FullyConnectedLayer_64bit
+                  (size, new TActivation().GetInstance<double>(), (IOptimizer<double>)(optimizer ?? new None<TPrecision>())) :
                 //typeof(TPrecision) == typeof(float) ? (ILayer<TPrecision>)new FullyConnectedSigmoidLayer_32bit(size, new TActivation().GetInstance<float>()) :
                 throw new NotImplementedException()
             )
