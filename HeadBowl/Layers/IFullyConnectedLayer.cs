@@ -1,4 +1,6 @@
 ﻿using HeadBowl.Helpers;
+using Microsoft.Toolkit.HighPerformance;
+using System.Runtime.CompilerServices;
 
 namespace HeadBowl.Layers
 {
@@ -70,6 +72,8 @@ namespace HeadBowl.Layers
         }
 
         public bool EnableParallelProcessing { get; set; }
+        public bool ExperimentalFeature { get; set; }
+
 
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);
@@ -86,35 +90,69 @@ namespace HeadBowl.Layers
         }
 
 
+
+// Regarding the Array casting of the:
+// We might want to add a clean way to transform next layer arrays (which are supposed
+// to be able to have variable dimensions) to a arrays of with the specific required
+// dimensions.
+// Alternativly, we could insert a layer into the network as an interface between two
+// layers of different type.
+// (e.g. Getting an input from a convolutional layer)
+
+// Regarding the value clamping:
+// We need to clamp the value to a minimum and maximum, other wise NaNs and Inifinities can occur.
+// This might be redundant later when adding optimizers with weights decay.
+
+// When running in parallel, the spans have to be created for each loop as the cannot be
+// allocated on the heap. Even then, running benchmarks shows a significant advantage,
+// even for the spans that are created only to be used once.
+
         public void Forward()
         {
-            // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
-            //       to be able to have variable dimensions) to a arrays of with the specific required
-            //       dimensions.
             double[] inputs = (double[])Inputs;
 
             if (EnableParallelProcessing)
             {
-                Parallel.For(0, _size, node =>
+                if (ExperimentalFeature)
+                {            
+                }
+                else
                 {
-                    _activations[node] = _biases[node];
+                    Parallel.For(0, _size, node =>
+                    {
+                        Span<double> activations = _activations;
+                        ReadOnlySpan<double> biases = _biases;
+                        ReadOnlySpan2D<double> weights = _weights;
 
-                    for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
-                        _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode];
+                        activations[node] = biases[node];
+                        for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
+                            activations[node] += weights[node, prevLayerNode] * inputs[prevLayerNode];
 
-                    _activations[node] = Activation(_activations[node]);
-                });
+                        activations[node] = Activation(activations[node]);
+                    });
+                }
             }
             else
             {
-                for (int node = 0; node < _size; node++)
+                if (ExperimentalFeature)
                 {
-                    _activations[node] = _biases[node];
+                }
+                else
+                {
+                    Span<double> activations = _activations;
+                    ReadOnlySpan<double> biases = _biases;
 
-                    for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
-                        _activations[node] += _weights[node, prevLayerNode] * inputs[prevLayerNode];
+                    for (int node = 0; node < _size; node++)
+                    {
+                        activations[node] = biases[node];
 
-                    _activations[node] = Activation(_activations[node]);
+                        ReadOnlySpan2D<double> weights = _weights;
+
+                        for (int prevLayerNode = 0; prevLayerNode < inputs.Length; prevLayerNode++)
+                            activations[node] += weights[node, prevLayerNode] * inputs[prevLayerNode];
+
+                        activations[node] = Activation(activations[node]);
+                    }
                 }
             }
         }
@@ -125,16 +163,32 @@ namespace HeadBowl.Layers
             {
                 if (EnableParallelProcessing)
                 {
-                    Parallel.For(0, _size, node =>
+                    if (ExperimentalFeature)
                     {
-                        _gradients[node] = Math.Pow(_activations[node] - ((double[])GradientDependencies)[node], 2);
-                    });
+                    }
+                    else
+                    {
+                        Parallel.For(0, _size, node =>
+                        {
+                            Span<double> gradients =  (_gradients);
+                            ReadOnlySpan<double> activations = (_activations), gradientDep =  ((double[])GradientDependencies);
+                            gradients[node] = Math.Pow(activations[node] - gradientDep[node], 2);
+                        });
+                    }
                 }
                 else
                 {
-                    for (int node = 0; node < _size; node++)
+                    if (ExperimentalFeature)
                     {
-                        _gradients[node] = Math.Pow(_activations[node] - ((double[])GradientDependencies)[node], 2);
+                    }
+                    else
+                    {
+                        Span<double> gradients = (_gradients);
+                        ReadOnlySpan<double> activations = (_activations), gradientDep = (double[])GradientDependencies;
+                        for (int node = 0; node < _size; node++)
+                        {
+                            gradients[node] = Math.Pow(activations[node] - gradientDep[node], 2);
+                        }
                     }
                 }
             }
@@ -142,28 +196,42 @@ namespace HeadBowl.Layers
             {
                 if (EnableParallelProcessing)
                 {
-                    Parallel.For(0, _size, node =>
+                    if (ExperimentalFeature)
                     {
-                        for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
-                            // TODO: we might want to add a clean way to transform next layer arrays (which are supposed
-                            //       to be able to have variable dimensions) to a arrays of with the specific required
-                            //       dimensions.
-                            _gradients[node] += ((double[])GradientDependencies)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
+                    }
+                    else
+                    {
+                        Parallel.For(0, _size, node =>
+                        {
+                            ReadOnlySpan2D<double> nextLayer = ((double[,])_nextLayer!.Weights);
+                            ReadOnlySpan<double> gradientDep = ((double[])GradientDependencies), activations = (_activations);
+                            Span<double> gradients = (_gradients);
 
-                        _gradients[node] *= ActivationDerivative(_activations[node]);
-                    });
+                            for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
+                                gradients[node] += gradientDep[nextLayerNode] * nextLayer[nextLayerNode, node];
+
+                            gradients[node] *= ActivationDerivative(activations[node]);
+                        });
+                    }
                 }
                 else
                 {
-                    for (int node = 0; node < _size; node++)
+                    if (ExperimentalFeature)
                     {
-                        for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
-                            // TODO: we might want to add a clean way to transform next layer arrays (which are supposed
-                            //       to be able to have variable dimensions) to a arrays of with the specific required
-                            //       dimensions.
-                            _gradients[node] += ((double[])GradientDependencies)[nextLayerNode] * ((double[,])_nextLayer.Weights)[nextLayerNode, node];
+                    }
+                    else
+                    {
+                        ReadOnlySpan2D<double> nextLayer = ((double[,])_nextLayer!.Weights);
+                        ReadOnlySpan<double> gradientDep = ((double[])GradientDependencies), activations = (_activations);
+                        Span<double> gradients = (_gradients);
 
-                        _gradients[node] *= ActivationDerivative(_activations[node]);
+                        for (int node = 0; node < _size; node++)
+                        {
+                            for (int nextLayerNode = 0; nextLayerNode < _nextLayer!.Size; nextLayerNode++)
+                                gradients[node] += gradientDep[nextLayerNode] * nextLayer[nextLayerNode, node];
+
+                            gradients[node] *= ActivationDerivative(activations[node]);
+                        }
                     }
                 }
             }
@@ -175,38 +243,48 @@ namespace HeadBowl.Layers
             {
                 if (EnableParallelProcessing)
                 {
-                    Parallel.For(0, _size, node =>
+                    if (ExperimentalFeature)
                     {
-                        // We have to clamp the values here, other wise the output might result in NaN or an Infinity
+                    }
+                    else
+                    {
+                        Parallel.For(0, _size, node =>
+                        {
+                            // Creating spans around the required data inside the loop; we cannot pass spans 
+                            ReadOnlySpan<double> gradients = (_gradients), lRates = (_lRates), prevLayer = ((double[])_prevLayer!.Activations!);
+                            Span<double> biases = (_biases);
+                            Span2D<double> weights = (_weights);
 
-                        _biases[node] -= Math.Clamp(_gradients[node] * _lRates[node], -1e50, 1e50);
+                            // Bias modification
+                            biases[node] -= Math.Clamp(gradients[node] * lRates[node], -1e50, 1e50);
 
-                        for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
-                            // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
-                            //       to be able to have variable dimensions) to a arrays of with the specific required
-                            //       dimensions.
-                            //
-                            // we need to clamp the value to a minimum and maximum, other wise NaNs and Inifinities can occur. This might be eliminated 
-                            // later when adding optimizers with weights decay.
-                            _weights[node, prevLayerNode] -= Math.Clamp(_gradients[node] * ((double[])_prevLayer.Activations)[prevLayerNode] * _lRates[node], -1e50, 1e50);
-                    });
+                            // Weight modification
+                            for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)                                
+                                weights[node, prevLayerNode] -= Math.Clamp(gradients[node] * prevLayer[prevLayerNode] * lRates[node], -1e50, 1e50);
+                        });
+                    }
                 }
                 else
                 {
-                    for (int node = 0; node < _size; node++)
+                    if (ExperimentalFeature)
                     {
-                        // We have to clamp the values here, other wise the output might result in NaN or an Infinity
+                    }
+                    else
+                    {
+                        // Creating spans around the required data
+                        ReadOnlySpan<double> gradients = (_gradients), lRates = (_lRates), prevLayer = ((double[])_prevLayer!.Activations!);
+                        Span<double> biases = (_biases);
+                        Span2D<double> weights = (_weights);
 
-                        _biases[node] -= Math.Clamp(_gradients[node] * _lRates[node], -1e50, 1e50);
+                        for (int node = 0; node < _size; node++)
+                        {
+                            // Bias modification
+                            biases[node] -= Math.Clamp(gradients[node] * lRates[node], -1e50, 1e50);
 
-                        for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
-                            // TODO: we might wanna add a clean way to transform next layer arrays (which are supposed
-                            //       to be able to have variable dimensions) to a arrays of with the specific required
-                            //       dimensions.
-                            //
-                            // we need to clamp the value to a minimum and maximum, other wise NaNs and Inifinities can occur. This might be eliminated 
-                            // later when adding optimizers with weights decay.
-                            _weights[node, prevLayerNode] -= Math.Clamp(_gradients[node] * ((double[])_prevLayer.Activations)[prevLayerNode] * _lRates[node], -1e50, 1e50);
+                            // Weight modification
+                            for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
+                                weights[node, prevLayerNode] -= Math.Clamp(gradients[node] * prevLayer[prevLayerNode] * lRates[node], -1e50, 1e50);
+                        }
                     }
                 }
             }
@@ -222,15 +300,21 @@ namespace HeadBowl.Layers
 
 
 
+
     internal class FullyConnectedSigmoidLayer_64bit : FullyConnectedLayer_64bit
     {
         public FullyConnectedSigmoidLayer_64bit(int size)
             : base(size)
         { }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override double Activation(double input) => Sigmoid_64bit.Activation(input);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override double ActivationDerivative(double input) => Sigmoid_64bit.ActivationDerivative(input);
     }
+
 
     internal class FullyConnectedReLULayer_64bit : FullyConnectedLayer_64bit
     {
@@ -238,7 +322,11 @@ namespace HeadBowl.Layers
             : base(size)
         { }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override double Activation(double input) => ReLU_64bit.Activation(input);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override double ActivationDerivative(double input) => ReLU_64bit.ActivationDerivative(input);
     }
 }

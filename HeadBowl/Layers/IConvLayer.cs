@@ -110,6 +110,7 @@ namespace HeadBowl.Layers
         }
 
         public bool EnableParallelProcessing { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool ExperimentalFeature { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         abstract public double Activation(double input);
         abstract public double ActivationDerivative(double input);

@@ -10,6 +10,7 @@ namespace HeadBowl.Layers
         bool IsInputLayer { get; }
 
         bool EnableParallelProcessing { get; set; }
+        bool ExperimentalFeature { get; set; }
 
         int Size { get; }
 

@@ -4,96 +4,79 @@ using HeadBowl.Layers;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
+
+//
+// TODO:
+// Test out using Posit number format [Lombiq Arithmetic]
+//
+
+
 public static class Program
 {
-    // TODO: Test out using Posit number format [Lombiq Arithmetic]
+    static ITrainingData<double> traningData;
+    static INet<double> nn;
+
+    static Program()
+    {
+        traningData = new Xor<double>();
+
+        nn = Net<double>.Build(
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 2),
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1000),
+            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1));
+    }
+
 
     public static void Main(string[] args)
     {
-        ITrainingData<double> traningData = new Xor<double>();
-
-        INet<double> nn = Net<double>.Build(
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 2),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 3),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1));
-
-        BenchmarkRunner.Run<BenchmarkNet>();
-
-        nn.EnableParallelProcessing = true;
-
-        for (int i = 0;  i < 300000; i++)
-        {
-            foreach (var data in traningData.Data)
-                nn.Train(data.Inputs, data.Expected);
-
-
-            if (i % 1000 == 0)
-                Console.WriteLine(nn.Cost);
-        }
+        BenchmarkRunner.Run<BenchmarkNets>();
     }
 
+
+    public class BenchmarkNets
+    {
+        [Benchmark]
+        public void NormalLinear()
+        {
+            nn.ExperimentalFeature = false;
+            nn.EnableParallelProcessing = false;
+
+            foreach (var data in traningData.Data)
+                nn.Train(data.Inputs, data.Expected);
+        }
+
+        //[Benchmark]
+        //public void ExperimentalLinear()
+        //{
+        //    nn.ExperimentalFeature = true;
+        //    nn.EnableParallelProcessing = false;
+
+        //    foreach (var data in traningData.Data)
+        //        nn.Train(data.Inputs, data.Expected);
+        //}
+
+        //[Benchmark]
+        //public void NormalParallel()
+        //{
+        //    nn.ExperimentalFeature = false;
+        //    nn.EnableParallelProcessing = true;
+
+        //    foreach (var data in traningData.Data)
+        //        nn.Train(data.Inputs, data.Expected);
+        //}
+
+        //[Benchmark]
+        //public void ExperimentalParallel()
+        //{
+        //    nn.ExperimentalFeature = true;
+        //    nn.EnableParallelProcessing = true;
+
+        //    foreach (var data in traningData.Data)
+        //        nn.Train(data.Inputs, data.Expected);
+        //}
+
+    }
 
 }
 
-
-public class BenchmarkNet
-{
-    [Benchmark]
-    public void BenchmarkLinear()
-    {
-        INet<double> nn = Net<double>.Build(
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 2),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 3),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1));
-
-        nn.EnableParallelProcessing = false;
-
-
-        ITrainingData<double> traningData = new Xor<double>();
-        for (int i = 0; i < 500; i++)
-        {
-            foreach (var data in traningData.Data)
-                nn.Train(data.Inputs, data.Expected);
-        }
-    }
-
-    [Benchmark]
-    public void BenchmarkParallel()
-    {
-        INet<double> nn = Net<double>.Build(
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 2),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 300),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 30),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 3),
-            new FullyConnectedLayer<double>(ActivationType.Sigmoid, size: 1));
-
-        nn.EnableParallelProcessing = true;
-
-
-        ITrainingData<double> traningData = new Xor<double>();
-        for (int i = 0; i < 500; i++)
-        {
-            foreach (var data in traningData.Data)
-                nn.Train(data.Inputs, data.Expected);
-        }
-    }
-}

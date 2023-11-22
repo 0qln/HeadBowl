@@ -12,9 +12,10 @@ namespace HeadBowl
     {
         public T Cost { get; }
         /// <summary>
-        /// Recommendet for Nets with large layer sizes.
+        /// Recommendet for Nets with large layer sizes, but few layer count. 
         /// </summary>
         public bool EnableParallelProcessing { get; set; }
+        public bool ExperimentalFeature { get; set; }
         public void Train(T[] inputs, T[] expectedOutputs);
         public T[] Forward(Array inputs);
     }
@@ -25,8 +26,9 @@ namespace HeadBowl
     {
         public TPrecision Cost => _net.Cost;
         public bool EnableParallelProcessing { get => _net.EnableParallelProcessing; set => _net.EnableParallelProcessing = value; }
+        public bool ExperimentalFeature { get => _net.ExperimentalFeature; set => _net.ExperimentalFeature = value; }
 
-        private INet<TPrecision> _net;
+        private readonly INet<TPrecision> _net;
 
 
         internal Net(params ILayer<TPrecision>[] layers)
@@ -83,13 +85,30 @@ namespace HeadBowl
             }
             set
             {
+                _enableParallelProcessing = value;
                 foreach (var layer in _layers)
                 {
                     layer.EnableParallelProcessing = value;
                 }
             }
         }
+        public bool ExperimentalFeature
+        {
+            get
+            {
+                return _experimentalFeature;
+            }
+            set
+            {
+                _experimentalFeature = value;
+                foreach (var layer in _layers)
+                {
+                    layer.ExperimentalFeature = value;
+                }
+            }
+        }
 
+        private bool _experimentalFeature = false;
         private bool _enableParallelProcessing = false;
         private ILayer<double>[] _layers;
         private double _lastCost = 0;
