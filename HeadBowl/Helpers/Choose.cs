@@ -13,7 +13,7 @@ namespace HeadBowl.Helpers
 
         public static TrainingDataInstance<T> Random<T>(ITrainingData<T> data)
         {
-            int index = _rng.Next(0, data.Samples);
+            int index = _rng.Next(0, data.SampleCount);
             return data.Data[index];
         }
 
@@ -25,7 +25,7 @@ namespace HeadBowl.Helpers
         private static int _cycleIndex = 0;
         public static TrainingDataInstance<T> Cycle<T>(ITrainingData<T> data)
         {
-            return data.Data[_cycleIndex++ % data.Samples];
+            return data.Data[_cycleIndex++ % data.SampleCount];
         }
     }
 }
