@@ -7,6 +7,10 @@ using HeadBowl.Optimizers;
 using Iced.Intel;
 using System.Runtime.InteropServices;
 using HeadBowl.Helpers;
+using HeadBowl.TrainingData.Enviroments;
+using HeadBowl.ReinforcementLearning;
+using System;
+using System.Diagnostics;
 
 
 //
@@ -36,22 +40,100 @@ public static class Program
 
     public static void Main(string[] args)
     {
-        //var normalNN = Net.Clone(nn);
-        //var optimNN = Net.Clone(nn);
-        //Net.SetOptimizer(optimNN, Optimizers.Momentum(0.9));
-        //CompareNets(normalNN, optimNN, 500, 14);
-
         const double BETA = 0.9;
-        const int MSG = 30;
 
-        BenchmarkNet(epochs: MSG * 5, messages: MSG, net: Net.Build(
-            new FullyConnectedLayer<double, Sigmoid>(2, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(300, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(300, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
+        var nn = Net.Build(
+            new FullyConnectedLayer<double, Sigmoid>(10, Optimizers.Momentum(BETA)),
+            new FullyConnectedLayer<double, Sigmoid>(20, Optimizers.Momentum(BETA)),
+            new FullyConnectedLayer<double, Sigmoid>(20, Optimizers.Momentum(BETA)),
             new FullyConnectedLayer<double, Sigmoid>(1, Optimizers.Momentum(BETA))
-        ));
+        );
+
+        nn.Load(@"D:\Programmmieren\Projects\HeadBowl\ConsoleApp\bin\Debug\Backups\net-64bit-layers_10_20_20_1-backup-(0).dat");
+
+        double[] GetInputs(Position state, int action)
+        {
+            var inputs = new double[state.SquareColors.Length + 1];
+            Array.Copy(state.SquareColors, inputs, state.SquareColors.Length);
+            inputs[state.SquareColors.Length] = action;
+            return inputs;
+        }
+
+        MonteCarloQLearning<double, Position, int>.QFunction Q = (state, action) =>
+        {
+            var inputs = GetInputs(state, action);
+            var outputs = nn.Forward(inputs);
+            return outputs[0];
+        };
+
+        for (int i = 0; i < 30; i++)
+        {
+            Position position = new();
+            int us = position.Turn, result;
+            int n = 0;
+            int[] moves = new int[9];
+            
+            while (position.GameState == GameStates.Ongoing)
+            {
+                moves[n] = position.LegalMoves().MaxBy(move => Q(position, move));
+                position.MakeMove(moves[n]);
+                n++;
+            }
+
+            result = position.GameState;
+
+            double reward = result == GameStates.Win[us] ? 1 : result == GameStates.Draw ? 0 : -1;
+
+            for (int k = n - 1; k >= 0; k--)
+            {
+                int action = moves[k];
+                position.UndoMove(action);
+                
+                if (position.Turn == us)
+                {
+                    double expected = Q(position, action);
+                    nn.Train(GetInputs(position, action), [(1.0d / n) * reward - expected]);
+                }
+            }
+
+            Debug.Assert(position.Turn == us);
+
+            Console.WriteLine($"{reward - Q(position, moves[0])}");
+        }
+
+        nn.Safe("../Backups");
+    }
+
+    public static void Quickplay(bool agentBegin, INet<double> nn)
+    {
+        double[] GetInputs(Position state, int action)
+        {
+            var inputs = new double[state.SquareColors.Length + 1];
+            Array.Copy(state.SquareColors, inputs, state.SquareColors.Length);
+            inputs[state.SquareColors.Length] = action;
+            return inputs;
+        }
+
+        MonteCarloQLearning<double, Position, int>.QFunction Q = (state, action) =>
+        {
+            var inputs = GetInputs(state, action);
+            var outputs = nn.Forward(inputs);
+            return outputs[0];
+        };
+
+        Position p = new();
+        Console.WriteLine(p);
+
+        while (p.GameState == GameStates.Ongoing)
+        {
+            int move = agentBegin
+                ? p.LegalMoves().MaxBy(move => Q(p, move))
+                : Utils.StrToSq(Console.ReadLine()!);
+            p.MakeMove(move);
+            Console.WriteLine(p);
+
+            agentBegin = !agentBegin;
+        }
     }
 
     public static void BenchmarkNet<TPrecision>(INet<TPrecision> net, int epochs, int messages)

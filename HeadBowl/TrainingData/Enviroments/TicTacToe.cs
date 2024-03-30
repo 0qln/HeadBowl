@@ -118,6 +118,8 @@ public struct Position
     /// </summary>
     private readonly Color[] _colors = new Color[9];
 
+    public readonly Color[] SquareColors => _colors;
+
     /// <summary>
     /// The current color at the square.
     /// </summary>
