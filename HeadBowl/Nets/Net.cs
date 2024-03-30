@@ -69,11 +69,11 @@ namespace HeadBowl.Nets
 
             return copy;
         }
-        public static void SetOptimizer<TPrecision>(INet<TPrecision> net, IOptimizer<TPrecision> optimizer)
+        public static void SetOptimizer<TPrecision>(INet<TPrecision> net, Func<IOptimizer<TPrecision>> optimizer)
         {
             foreach (var layer in net.Layers)
             {
-                layer.Optimizer = optimizer;
+                layer.Optimizer = optimizer();
             }
         }
     }
@@ -139,8 +139,7 @@ namespace HeadBowl.Nets
         {
             Forward(inputs);
 
-            MSE((double[])_layers[^1].Activations!
-                    ?? throw new Exception("Last layer has to have an onedimensional array as output. Consider rethinking your network design."),
+            MSE((double[])_layers[^1].Activations! ?? throw new Exception("Last layer has to have an onedimensional array as output. Consider rethinking your network design."),
                 expectedOutputs,
                 out _lastCost);
 
@@ -148,11 +147,13 @@ namespace HeadBowl.Nets
             _layers[^1].GenerateGradients();
             _layers[^1].ApplyOptimizer();
             _layers[^1].ApplyGradients();
+            _layers[^1].UpdateParamaters();
             for (int layer = _layers.Length - 2; layer >= 0; layer--)
             {
                 _layers[layer].GenerateGradients();
                 _layers[layer].ApplyOptimizer();
                 _layers[layer].ApplyGradients();
+                _layers[layer].UpdateParamaters();
             }
         }
 

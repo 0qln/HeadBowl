@@ -30,6 +30,8 @@ namespace HeadBowl.Layers
         void ApplyOptimizer();
         // 4.
         void ApplyGradients();
+        // 5.
+        void UpdateParamaters();
 
 
         public ILayerBuilder<T> ToRawBuilder();

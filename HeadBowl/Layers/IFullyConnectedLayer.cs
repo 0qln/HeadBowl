@@ -11,8 +11,7 @@ namespace HeadBowl.Layers
     {
 
     }
-
-
+    
 
     internal class FullyConnectedLayer_64bit : IFullyConnectedLayer<double>
     // Regarding the Array casting of the:
@@ -45,6 +44,7 @@ namespace HeadBowl.Layers
 
         protected IOptimizer<double> _optimizer;
 
+
         public IActivation<double> Activation => _activation;
         protected readonly IActivation<double> _activation;
 
@@ -57,9 +57,7 @@ namespace HeadBowl.Layers
             set
             {
                 if (value.GetType() != typeof(double[]))
-                {
                     throw new ArgumentException();
-                }
 
                 _inputs = value as double[];
             }
@@ -76,24 +74,15 @@ namespace HeadBowl.Layers
             set
             {
                 if (value.GetType() != typeof(double[]))
-                {
                     throw new ArgumentException();
-                }
-
                 _expectedOutputs = value as double[];
             }
             protected get
             {
-                if (IsOutputLayer)
-                {
-                    return _expectedOutputs ?? throw new Exception("No expected outputs provided.");
-                }
-                else
-                {
-                    Array ret = _nextLayer!.Gradients ?? throw new Exception("Next layers gradients have not been calculated yet.");
-                    double[] specRet = ret as double[] ?? throw new NotImplementedException("Backpropagation between FC and non FC layers have not been implemented yet");
-                    return specRet;
-                }
+                return IsOutputLayer ? 
+                    _expectedOutputs ?? throw new Exception("No expected outputs provided.") :
+                    (_nextLayer!.Gradients ?? throw new Exception("Next layers gradients have not been calculated yet.")) 
+                    as double[] ?? throw new NotImplementedException("Backpropagation between FC and non FC layers have not been implemented yet");
             }
         }
 
@@ -102,7 +91,13 @@ namespace HeadBowl.Layers
 
         public Array LearningRates => _lRates;
 
-        public IOptimizer<double> Optimizer { get => _optimizer; set => _optimizer = value; }
+        public IOptimizer<double> Optimizer { 
+            get => _optimizer; 
+            set {
+                _optimizer = value;
+                _optimizer.Load(this);
+            } 
+        }
 
         public FullyConnectedLayer_64bit(int size, IActivation<double> activation, IOptimizer<double> optimizer)
         {
@@ -247,7 +242,7 @@ namespace HeadBowl.Layers
         }
 
         public void ApplyOptimizer()
-        {
+        {   
             _optimizer.Optimize(this);
         }
 
@@ -265,13 +260,13 @@ namespace HeadBowl.Layers
                         Parallel.For(0, _size, node =>
                         {
                             ReadOnlySpan<double> gradients = _gradients, lRates = _lRates, prevLayer = (double[])_prevLayer!.Activations!;
-                            Span<double> biases = _biases;
-                            Span2D<double> weights = _weights;
+                            Span<double> biasUpdates = _optimizer.BiasUpdates;
+                            Span2D<double> weightUpdates = _optimizer.WeightUpdates;
 
-                            biases[node] -= Math.Clamp(gradients[node] * lRates[node], -1e50, 1e50);
+                            biasUpdates[node] += gradients[node] * lRates[node];
 
-                            for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)                                
-                                weights[node, prevLayerNode] -= Math.Clamp(gradients[node] * prevLayer[prevLayerNode] * lRates[node], -1e50, 1e50);
+                            for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
+                                weightUpdates[node, prevLayerNode] += gradients[node] * prevLayer[prevLayerNode] * lRates[node];
                         });
                     }
                 }
@@ -283,27 +278,77 @@ namespace HeadBowl.Layers
                     else
                     {
                         ReadOnlySpan<double> gradients = _gradients, lRates = _lRates, prevLayer = (double[])_prevLayer!.Activations!;
-                        Span<double> biases = _biases;
-                        Span2D<double> weights = _weights;
+                        Span<double> biasUpdates = _optimizer.BiasUpdates;
+                        Span2D<double> weightUpdates = _optimizer.WeightUpdates;
 
                         for (int node = 0; node < _size; node++)
                         {
-                            biases[node] -= Math.Clamp(gradients[node] * lRates[node], -1e50, 1e50);
+                            biasUpdates[node] += gradients[node] * lRates[node];
 
                             for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
-                                weights[node, prevLayerNode] -= Math.Clamp(gradients[node] * prevLayer[prevLayerNode] * lRates[node], -1e50, 1e50);
+                                weightUpdates[node, prevLayerNode] += gradients[node] * prevLayer[prevLayerNode] * lRates[node];
                         }
                     }
                 }
             }
         }
 
+        public void UpdateParamaters()
+        {
+            if (!IsInputLayer)
+            {
+                if (EnableParallelProcessing)
+                {
+                    if (ExperimentalFeature)
+                    {
+                    }
+                    else
+                    {
+                        Parallel.For(0, _size, node =>
+                        {
+                            ReadOnlySpan<double> updatesB = _optimizer.BiasUpdates;
+                            ReadOnlySpan2D<double> updatesW = _optimizer.WeightUpdates;
+                            Span<double> biases = _biases;
+                            Span2D<double> weights = _weights;
+
+                            biases[node] -= Math.Clamp(updatesB[node], -1e50, 1e50);
+
+                            for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
+                                weights[node, prevLayerNode] -= Math.Clamp(updatesW[node, prevLayerNode], -1e50, 1e50);
+                        });
+                    }
+                }
+                else
+                {
+
+                    if (ExperimentalFeature)
+                    {
+                    }
+                    else
+                    {
+                        ReadOnlySpan<double> updatesB = _optimizer.BiasUpdates;
+                        ReadOnlySpan2D<double> updatesW = _optimizer.WeightUpdates;
+                        Span<double> biases = _biases;
+                        Span2D<double> weights = _weights;
+
+                        for (int node = 0; node < _size; node++)
+                        {
+                            biases[node] -= Math.Clamp(updatesB[node], -1e50, 1e50);
+
+                            for (int prevLayerNode = 0; prevLayerNode < _prevLayer!.Size; prevLayerNode++)
+                                weights[node, prevLayerNode] -= Math.Clamp(updatesW[node, prevLayerNode], -1e50, 1e50);
+                        }
+                    }
+                }
+            }
+        }
 
         public void _InitInNet(ILayer<double>? prev, ILayer<double>? next)
         {
             _prevLayer = prev;
             _nextLayer = next;
             _weights = Init<double>.Random(_size, _prevLayer?.Size ?? 0);
+            _optimizer.Load(this);
         }
 
         public ILayerBuilder<double> ToRawBuilder()

@@ -1,4 +1,5 @@
 ﻿using HeadBowl.Layers;
+using HeadBowl.Optimizers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,28 +8,15 @@ using System.Threading.Tasks;
 
 namespace HeadBowl.Optimizers
 {
+    public static partial class Optimizers { }
+
     public interface IOptimizer<TPrecision> 
     {
         public IOptimizer<TPrecision> Clone();
         public void Optimize(ILayer<TPrecision> data);
+        public void Load(ILayer<TPrecision> data);
+        public TPrecision[]? BiasUpdates { get; }
+        public TPrecision[,]? WeightUpdates { get; }
     }
 
-    public static class Optimizers
-    {
-        public static IOptimizer<TPrecision> None<TPrecision>()
-        {
-            return new None<TPrecision>();
-        }
-
-        public static IAdam<TPrecision> Adam<TPrecision>(
-            TPrecision alpha,
-            TPrecision beta1,
-            TPrecision beta2,
-            TPrecision epsilon)
-        {
-            return
-                typeof(TPrecision) == typeof(double) ? (IAdam<TPrecision>)new Adam_64bit((dynamic)alpha!, (dynamic)beta1!, (dynamic)beta2!, (dynamic)epsilon!)
-                : throw new NotImplementedException();
-        }
-    }
 }

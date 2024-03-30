@@ -5,6 +5,8 @@ using BenchmarkDotNet.Running;
 using HeadBowl.Nets;
 using HeadBowl.Optimizers;
 using Iced.Intel;
+using System.Runtime.InteropServices;
+using HeadBowl.Helpers;
 
 
 //
@@ -24,8 +26,8 @@ public static class Program
 
         nn = Net.Build(
             new FullyConnectedLayer<double, Sigmoid>(2),
-            new FullyConnectedLayer<double, Sigmoid>(3),
-            new FullyConnectedLayer<double, Sigmoid>(2),
+            new FullyConnectedLayer<double, Sigmoid>(30),
+            new FullyConnectedLayer<double, Sigmoid>(20),
             new FullyConnectedLayer<double, Sigmoid>(1));
 
         nn.EnableParallelProcessing = false;
@@ -35,35 +37,38 @@ public static class Program
     public static void Main(string[] args)
     {
         var normalNN = Net.Clone(nn);
-        var adamNN = Net.Clone(nn);
-        Net.SetOptimizer(adamNN, Optimizers.Adam(0.001, 0.9, 0.999, 10E-8));
-
-        CompareNets(normalNN, adamNN);
+        var optimNN = Net.Clone(nn);
+        Net.SetOptimizer(optimNN, () => Optimizers.Momentum(0.9));
+        CompareNets(normalNN, optimNN, 500, 14);
     }
 
-    public static void CompareNets<TPrecision>(INet<TPrecision> net1, INet<TPrecision> net2)
+    public static void CompareNets<TPrecision>(INet<TPrecision> net1, INet<TPrecision> net2, int epochs, int messages)
     {
         var traningData = new Xor<TPrecision>();
 
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < epochs; i++)
         {
-            foreach (var data in traningData.Data)
-            {
-                net1.Train(data.Inputs, data.Expected);
-                net2.Train(data.Inputs, data.Expected);
-            }
+            var batch = Choose.Random(traningData);
 
-            foreach (var item in net1.Forward(traningData.Data[0].Inputs))
+            net1.Train(batch.Inputs, batch.Expected);
+            net2.Train(batch.Inputs, batch.Expected);
+
+            if (i % (epochs / messages) == 0)
             {
-                Console.WriteLine(item);
+                foreach (var item in net1.Forward(batch.Inputs))
+                {
+                    Console.WriteLine(item);
+                }
+                foreach (var item in net2.Forward(batch.Inputs))
+                {
+                    Console.WriteLine(item);
+                }
+                
+                Console.WriteLine();
             }
-            foreach (var item in net2.Forward(traningData.Data[0].Inputs))
-            {
-                Console.WriteLine(item);
-            }
-            Console.WriteLine();
         }
     }
+
 
 
     public class BenchmarkNets

@@ -231,6 +231,11 @@ namespace HeadBowl.Layers
         {
             throw new NotImplementedException();
         }
+
+        void ILayer<double>.UpdateParamaters()
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }
