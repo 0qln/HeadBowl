@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 
-namespace HeadBowl.Training_Data.Enviroments;
+namespace HeadBowl.TrainingData.Enviroments;
 
 using System.Text;
 using Bitboard = int;

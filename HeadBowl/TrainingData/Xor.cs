@@ -1,4 +1,4 @@
-﻿namespace HeadBowl.Training_Data;
+﻿namespace HeadBowl.TrainingData;
 
 public interface ITrainingData<T>
 {

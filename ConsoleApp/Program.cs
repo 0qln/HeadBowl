@@ -1,4 +1,4 @@
-﻿using HeadBowl.Training_Data;
+﻿using HeadBowl.TrainingData;
 using HeadBowl.Layers;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
