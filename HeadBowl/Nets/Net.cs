@@ -149,17 +149,14 @@ namespace HeadBowl.Nets
                 expectedOutputs,
                 out _lastCost);
 
-            _layers[^1].GradientDependencies = expectedOutputs;
-            _layers[^1].GenerateGradients();
-            _layers[^1].ApplyOptimizer();
-            _layers[^1].ApplyGradients();
-            _layers[^1].UpdateParamaters();
-            for (int layer = _layers.Length - 2; layer >= 0; layer--)
+            _layers.Last().GradientDependencies = expectedOutputs;
+
+            foreach (var layer in _layers.Reverse())
             {
-                _layers[layer].GenerateGradients();
-                _layers[layer].ApplyOptimizer();
-                _layers[layer].ApplyGradients();
-                _layers[layer].UpdateParamaters();
+                layer.GenerateGradients();
+                layer.ApplyOptimizer();
+                layer.ApplyGradients();
+                layer.UpdateParamaters();
             }
         }
 
