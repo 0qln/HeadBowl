@@ -9,14 +9,14 @@ namespace HeadBowl.Optimizers
 {
     public static partial class Optimizers
     {
-        public static IAdam<TPrecision> Adam<TPrecision>(
+        public static Func<IAdam<TPrecision>> Adam<TPrecision>(
             TPrecision alpha,
             TPrecision beta1,
             TPrecision beta2,
             TPrecision epsilon)
         {
             return
-                typeof(TPrecision) == typeof(double) ? (IAdam<TPrecision>)new Adam_64bit((dynamic)alpha!, (dynamic)beta1!, (dynamic)beta2!, (dynamic)epsilon!)
+                typeof(TPrecision) == typeof(double) ? () => (IAdam<TPrecision>)new Adam_64bit((dynamic)alpha!, (dynamic)beta1!, (dynamic)beta2!, (dynamic)epsilon!)
                 : throw new NotImplementedException();
         }
     }

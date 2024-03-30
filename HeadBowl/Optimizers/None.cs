@@ -10,9 +10,9 @@ namespace HeadBowl.Optimizers
 {
     public static partial class Optimizers
     {
-        public static IOptimizer<TPrecision> None<TPrecision>()
+        public static Func<IOptimizer<TPrecision>> None<TPrecision>()
         {
-            return new None<TPrecision>();
+            return () => new None<TPrecision>();
         }
     }
 

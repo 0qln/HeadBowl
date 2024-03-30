@@ -29,7 +29,7 @@ namespace HeadBowl.Layers
 
         ILayer<TPrecision> ILayerBuilder<TPrecision>.Build()
         {
-            _instance._InitInNet(_prev, _next);
+            _instance.InitInNet(_prev, _next);
             return _instance;
         }
         ILayer<TPrecision> ILayerBuilder<TPrecision>.Instance()

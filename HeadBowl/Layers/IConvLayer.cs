@@ -216,7 +216,7 @@ namespace HeadBowl.Layers
             throw new NotImplementedException();
         }
 
-        void ILayer<double>._InitInNet(ILayer<double>? prev, ILayer<double>? next)
+        void ILayer<double>.InitInNet(ILayer<double>? prev, ILayer<double>? next)
         {
             _prevLayer = prev;
             _nextLayer = next;
@@ -232,7 +232,7 @@ namespace HeadBowl.Layers
             throw new NotImplementedException();
         }
 
-        void ILayer<double>.UpdateParamaters()
+        void ILayer.UpdateParamaters()
         {
             throw new NotImplementedException();
         }

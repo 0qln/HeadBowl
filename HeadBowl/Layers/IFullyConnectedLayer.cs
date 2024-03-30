@@ -343,7 +343,7 @@ namespace HeadBowl.Layers
             }
         }
 
-        public void _InitInNet(ILayer<double>? prev, ILayer<double>? next)
+        public void InitInNet(ILayer<double>? prev, ILayer<double>? next)
         {
             _prevLayer = prev;
             _nextLayer = next;

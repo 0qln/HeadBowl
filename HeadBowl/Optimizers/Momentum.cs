@@ -10,11 +10,12 @@ namespace HeadBowl.Optimizers
 {
     public static partial class Optimizers
     {
-        public static IMomentum<T> Momentum<T>(T beta)
+        public static Func<IMomentum<TPrecision>> Momentum<TPrecision>(TPrecision beta)
+            where TPrecision : struct
         {
             return
-                typeof(T) == typeof(double) ? (dynamic) new Momentum_64bit((dynamic)beta!) :
-                throw new NotImplementedException();
+                typeof(TPrecision) == typeof(double) ? () => (dynamic)new Momentum_64bit((dynamic)beta) 
+                : throw new NotImplementedException();
         }
     }
 
@@ -33,12 +34,9 @@ namespace HeadBowl.Optimizers
         double[,]? IOptimizer<double>.WeightUpdates => _weightUpdates;
 
 
-        /// <summary></summary>
+        /// <summary>Create an instance of the Momentum optimizer.</summary>
         /// <param name="beta">A number between 0 and 1.</param>
-        public Momentum_64bit(double beta)
-        {
-            _beta = beta;
-        }
+        public Momentum_64bit(double beta) => _beta = beta;
 
         public void Load(ILayer<double> data)
         {
@@ -56,9 +54,6 @@ namespace HeadBowl.Optimizers
                     _weightUpdates[i, j] *= _beta;
         }
 
-        public IOptimizer<double> Clone()
-        {
-            return new Momentum_64bit(_beta);
-        }
+        public IOptimizer<double> Clone() => new Momentum_64bit(_beta);
     }
 }

@@ -26,8 +26,8 @@ public static class Program
 
         nn = Net.Build(
             new FullyConnectedLayer<double, Sigmoid>(2),
-            new FullyConnectedLayer<double, Sigmoid>(30),
-            new FullyConnectedLayer<double, Sigmoid>(20),
+            new FullyConnectedLayer<double, Sigmoid>(3),
+            new FullyConnectedLayer<double, Sigmoid>(2),
             new FullyConnectedLayer<double, Sigmoid>(1));
 
         nn.EnableParallelProcessing = false;
@@ -38,7 +38,7 @@ public static class Program
     {
         var normalNN = Net.Clone(nn);
         var optimNN = Net.Clone(nn);
-        Net.SetOptimizer(optimNN, () => Optimizers.Momentum(0.9));
+        Net.SetOptimizer(optimNN, Optimizers.Momentum(0.9));
         CompareNets(normalNN, optimNN, 500, 14);
     }
 
