@@ -5,8 +5,8 @@ namespace HeadBowl.Layers
     public interface ILayerBuilder<T>
     {
         public int Size { get; }
-        internal void SetNext(ILayer<T>? layer);
-        internal void SetPrev(ILayer<T>? layer);
+        internal ILayerBuilder<T> SetNext(ILayer<T>? layer);
+        internal ILayerBuilder<T> SetPrev(ILayer<T>? layer);
         public ILayer<T> Build();
         public ILayer<T> Instance();
     }
@@ -24,14 +24,24 @@ namespace HeadBowl.Layers
             _instance = instance;
         }
 
-        void ILayerBuilder<TPrecision>.SetNext(ILayer<TPrecision>? layer) => _next = layer;
-        void ILayerBuilder<TPrecision>.SetPrev(ILayer<TPrecision>? layer) => _prev = layer;
+        ILayerBuilder<TPrecision> ILayerBuilder<TPrecision>.SetNext(ILayer<TPrecision>? layer)
+        {
+            _next = layer;
+            return this;
+        }
+
+        ILayerBuilder<TPrecision> ILayerBuilder<TPrecision>.SetPrev(ILayer<TPrecision>? layer)
+        {
+            _prev = layer;
+            return this;
+        }
 
         ILayer<TPrecision> ILayerBuilder<TPrecision>.Build()
         {
             _instance.InitInNet(_prev, _next);
             return _instance;
         }
+
         ILayer<TPrecision> ILayerBuilder<TPrecision>.Instance()
         {
             return _instance;
@@ -41,12 +51,14 @@ namespace HeadBowl.Layers
     public class FullyConnectedLayer<TPrecision, TActivation> : LayerBuilderBase<TPrecision>
         where TActivation : IActivationType, new()
     {
-        public FullyConnectedLayer(int size, IOptimizer<TPrecision>? optimizer = null) 
+        public FullyConnectedLayer(int size, Func<IOptimizer<TPrecision>>? optimizer = null) 
             : base(
-                typeof(TPrecision) == typeof(double) ? (ILayer<TPrecision>)new FullyConnectedLayer_64bit
-                  (size, new TActivation().GetInstance<double>(), (IOptimizer<double>)(optimizer ?? new None<TPrecision>())) :
-                //typeof(TPrecision) == typeof(float) ? (ILayer<TPrecision>)new FullyConnectedSigmoidLayer_32bit(size, new TActivation().GetInstance<float>()) :
-                throw new NotImplementedException()
+                typeof(TPrecision) == typeof(double) 
+                    ? (ILayer<TPrecision>) new FullyConnectedLayer_64bit(
+                        size: size, 
+                        activation: new TActivation().GetInstance<double>(), 
+                        optimizer: (IOptimizer<double>)(optimizer?.Invoke() ?? new None<TPrecision>())) 
+                    : throw new NotImplementedException()
             )
         { 
         }

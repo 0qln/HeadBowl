@@ -16,5 +16,16 @@ namespace HeadBowl.Helpers
             int index = _rng.Next(0, data.Samples);
             return data.Data[index];
         }
+
+        public static TrainingDataInstance<T> First<T>(ITrainingData<T> data)
+        {
+            return data.Data[0];
+        }
+
+        private static int _cycleIndex = 0;
+        public static TrainingDataInstance<T> Cycle<T>(ITrainingData<T> data)
+        {
+            return data.Data[_cycleIndex++ % data.Samples];
+        }
     }
 }
