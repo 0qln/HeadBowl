@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HeadBowl.Layers;
 using HeadBowl.Optimizers;
+using Microsoft.Toolkit.HighPerformance;
+using Microsoft.Win32.SafeHandles;
 
 namespace HeadBowl.Nets
 {
@@ -21,6 +24,9 @@ namespace HeadBowl.Nets
         public T[] Forward(Array inputs);
 
         public ILayer<T>[] Layers { get; }
+
+        public string Safe(string folder);
+        public void Load(string file, bool destroyAfterRead = false);
     }
 
 
@@ -168,6 +174,77 @@ namespace HeadBowl.Nets
 
             return (double[])_layers[^1].Activations!
                 ?? throw new Exception("Last layer has to have an onedimensional array as output. Consider rethinking your network design.");
+        }
+
+        public override string? ToString()
+        {
+            StringBuilder sb = new();
+            sb.Append("net");
+            sb.Append("-64bit");
+            sb.Append("-layers");
+            foreach (var layer in _layers)
+                sb.Append($"_{layer.Size}");
+            return sb.ToString();
+        }
+
+        string INet<double>.Safe(string folder)
+        {
+            int fileNum = 0;
+            string name;
+            string destination() => Path.Combine(folder, name) + ".dat";
+            
+            // Find a valid name.
+            do
+                name = $"{this}-backup-({fileNum++})";
+            while (File.Exists(destination()));
+
+            // Create the file.
+            using BinaryWriter fs = new(File.Open(destination(), FileMode.Create));
+            foreach (var layer in _layers)
+            {
+                for (int i = 0; i < layer.Weights.GetLength(0); i++)
+                    for (int j = 0; j < layer.Weights.GetLength(1); j++)
+                        fs.Write(((double[,])layer.Weights)[i, j]);
+
+                for (int i = 0; i < layer.Biases.Length; i++)
+                    fs.Write(((double[])layer.Biases)[i]);
+            }
+
+            return destination();
+        }
+        // net-64bit-layers_10_200_200_1-backup-(0)
+        void INet<double>.Load(string file, bool destroyAfterRead)
+        {
+            // Check bounds and hyper parameters
+            if (Regex.Match(file, @"(?<=net-).*(?=bit-)").Value != "64")
+            {
+                throw new ArgumentException("Invalid precision.");
+            }
+
+            foreach (var x in _layers.Zip(Regex.Match(file, @"(?<=-layers_)[\d_]+").Value.Split('_')))
+            {
+                if (x.First.Size != int.Parse(x.Second))
+                    throw new ArgumentException("Invalid layer sizes.");
+            }
+
+            // Load parameters
+            using (BinaryReader fs = new(File.OpenRead(file)))
+            {
+                foreach (var layer in _layers)
+                {
+                    for (int i = 0; i < layer.Weights.GetLength(0); i++)
+                        for (int j = 0; j < layer.Weights.GetLength(1); j++)
+                            ((double[,])layer.Weights)[i, j] = fs.ReadDouble();
+
+                    for (int i = 0; i < layer.Biases.Length; i++)
+                        ((double[])layer.Biases)[i] = fs.ReadDouble();
+                }
+            }
+
+            if (destroyAfterRead)
+            {
+                File.Delete(file);
+            }
         }
     }
 }
