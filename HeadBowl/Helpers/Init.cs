@@ -5,7 +5,7 @@ namespace HeadBowl.Helpers
 {
     internal static class Init<T>
     {
-        private static readonly Random rng = new(18942753);
+        private static readonly Random rng = new();
 
         public static T[,,,] Random(params int[] sizes)
         {
