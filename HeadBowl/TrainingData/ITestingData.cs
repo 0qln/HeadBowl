@@ -1,6 +1,6 @@
 ﻿namespace HeadBowl.TrainingData;
 
-public interface ITrainingData<TPrecision>
+public interface ITestingData<TPrecision>
 {
     public int InputSize { get; }
     public int OutputSize { get; }
