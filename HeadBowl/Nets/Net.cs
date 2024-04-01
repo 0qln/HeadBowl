@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using HeadBowl.Layers;
 using HeadBowl.Optimizers;
-using Microsoft.Toolkit.HighPerformance;
-using Microsoft.Win32.SafeHandles;
 
 namespace HeadBowl.Nets
 {
@@ -20,7 +13,7 @@ namespace HeadBowl.Nets
         /// </summary>
         public bool EnableParallelProcessing { get; set; }
         public bool ExperimentalFeature { get; set; }
-        public void Train(T[] inputs, T[] expectedOutputs);
+        public void Train(T[] inputs, T[] expectedOutputs, T[]? outputs=null);
         public T[] Forward(Array inputs);
 
         public ILayer<T>[] Layers { get; }
@@ -141,9 +134,10 @@ namespace HeadBowl.Nets
             result /= expected.Length;
         }
 
-        public void Train(double[] inputs, double[] expectedOutputs)
+        public void Train(double[] inputs, double[] expectedOutputs, double[]? outputs = null)
         {
-            Forward(inputs);
+            // If we already have outputs given, we don't need to forward the inputs, because the caller has already done so.
+            if (outputs is null) Forward(inputs);
 
             MSE((double[])_layers[^1].Activations! ?? throw new Exception("Last layer has to have an onedimensional array as output. Consider rethinking your network design."),
                 expectedOutputs,

@@ -1,4 +1,6 @@
-﻿namespace HeadBowl.ReinforcementLearning;
+﻿using System.Numerics;
+
+namespace HeadBowl.ReinforcementLearning;
 
 /// <summary>
 /// https://github.com/0qln/Obsidian/blob/main/Main/Coding/Q%20Learning.md#monte-carlo-learning
@@ -6,26 +8,15 @@
 /// <typeparam name="TPrecision"></typeparam>
 /// <typeparam name="TState"></typeparam>
 /// <typeparam name="TAction"></typeparam>
-public static class MonteCarloQLearning<TPrecision, TState, TAction>
-    where TPrecision : struct
+public static class MonteCarloQLearning<TPrecision>
+    where TPrecision : struct, ISubtractionOperators<TPrecision, TPrecision, TPrecision>
 {
-    /// <summary>
-    /// Quality of the State/Action pair.
-    /// </summary>
-    /// <typeparam name="TState"></typeparam>
-    /// <typeparam name="TAction"></typeparam>
-    /// <param name="state">Current state.</param>
-    /// <param name="action">The action to take.</param>
-    /// <returns>The quality of the state s, taken action a.</returns>
-    public delegate TPrecision QFunction(TState state, TAction action);
-
-    // TODO:
-    // The new function will get slower and slower over each episode of training.
-    // Unwrap the recursive implementation and update the function iteratively instead.
-    public static QFunction NewQFunction(QFunction oldQFunction, TPrecision totalRewardOverEpisode, int numStates) 
-    => (state, action) =>
+    public static void Update<TState, TAction>(IAgent<TPrecision, TState, TAction> agent, TPrecision totalReward, TState state, TAction action, int numActions)
+        where TState : IEnviroment<TAction>
     {
-        TPrecision qOld = oldQFunction(state, action);
-        return qOld + (1.0f / numStates) * ((dynamic)totalRewardOverEpisode - qOld);
-    };
+        TPrecision[] output = [agent.Q(state, action)];
+        TPrecision[] input = agent.GetInputs(state, action);
+        TPrecision[] excpected = [(dynamic)(1.0 / numActions) * (totalReward - output[0])];
+        agent.Net.Train(input, excpected, output);
+    }
 }

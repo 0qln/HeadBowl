@@ -7,17 +7,10 @@ using GameState = int;
 
 namespace HeadBowl.TrainingData.TicTacToe;
 
-public class Engine<TPrecision> : IAgent<TPrecision, Position, int>
+public class Engine<TPrecision>(INet<TPrecision> nn) : IAgent<TPrecision, Position, int>
     where TPrecision : struct
 {
-    private INet<TPrecision> _nn;
-
-    public Engine(INet<TPrecision> nn)
-    {
-        _nn = nn;
-    }
-
-    private TPrecision[] GetInputs(Position state, int action)
+    public TPrecision[] GetInputs(Position state, int action)
     {
         var inputs = new TPrecision[state.SquareColors.Length + 1];
         Array.Copy(state.SquareColors, inputs, state.SquareColors.Length);
@@ -25,11 +18,16 @@ public class Engine<TPrecision> : IAgent<TPrecision, Position, int>
         return inputs;
     }
 
+    /// <summary>
+    /// Quality of the State/Action pair.
+    /// </summary>
     Functions.QFunction<TPrecision, Position, int> IAgent<TPrecision, Position, int>.Q => 
         (env, action) =>
     {
         var inputs = GetInputs(env, action);
-        var outputs = _nn.Forward(inputs);
+        var outputs = nn.Forward(inputs);
         return outputs[0];
     };
+
+    INet<TPrecision> IBrain<TPrecision>.Net => nn;
 }

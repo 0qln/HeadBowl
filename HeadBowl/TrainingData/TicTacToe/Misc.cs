@@ -6,6 +6,15 @@ using GameState = int;
 
 namespace HeadBowl.TrainingData.TicTacToe;
 
+public static  class Rewards
+{
+    public const int 
+        Win = 1, 
+        Draw = 0, 
+        Loss = -1, 
+        None = 0;
+}
+
 public static class GameStates
 {
     public const GameState

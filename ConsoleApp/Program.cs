@@ -14,6 +14,7 @@ using HeadBowl.ReinforcementLearning;
 using System;
 using System.Diagnostics;
 using HeadBowl.TrainingData.TicTacToe;
+using System.Numerics;
 
 
 //
@@ -41,53 +42,57 @@ public static class Program
 
         var nn = Net.Build(
             new FullyConnectedLayer<double, Sigmoid>(10, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(20, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(20, Optimizers.Momentum(BETA)),
+            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
+            new FullyConnectedLayer<double, Sigmoid>(300, Optimizers.Momentum(BETA)),
+            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
+            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
             new FullyConnectedLayer<double, Sigmoid>(1, Optimizers.Momentum(BETA))
         );
 
-        nn.Load(@"..\Backups\net-64bit-layers_10_20_20_1-backup-(0).dat");
+        nn.Load(@"..\Backups\net-64bit-layers_10_200_300_200_200_1-backup-(8).dat");
 
         UserQuickplay(false, new Engine<double>(nn), new Position(), Utils.StrToSq);
 
-        //for (int i = 0; i < 30; i++)
+        //for (int i = 0; i < 10000; i++)
         //{
-        //    Position position = new();
-        //    int us = position.Turn, result;
-        //    int n = 0;
-        //    int[] moves = new int[9];
+        //    SelfPlay(new Engine<double>(nn), new Position());
 
-        //    while (position.GameState == GameStates.Ongoing)
+        //    if (i % 100 == 0)
         //    {
-        //        moves[n] = position.LegalMoves().MaxBy(move => Q(position, move));
-        //        position.MakeMove(moves[n]);
-        //        n++;
+        //        nn.Safe("../Backups");
         //    }
-
-        //    result = position.GameState;
-
-        //    double reward = result == GameStates.Win[us] ? 1 : result == GameStates.Draw ? 0 : -1;
-
-        //    for (int k = n - 1; k >= 0; k--)
-        //    {
-        //        int action = moves[k];
-        //        position.UndoMove(action);
-
-        //        if (position.Turn == us)
-        //        {
-        //            double expected = Q(position, action);
-        //            nn.Train(GetInputs(position, action), [(1.0d / n) * reward - expected]);
-        //        }
-        //    }
-
-        //    Debug.Assert(position.Turn == us);
-
-        //    Console.WriteLine($"{reward - Q(position, moves[0])}");
         //}
 
-        //nn.Safe("../Backups");
 
 #endif
+    }
+
+    public static void SelfPlay<TAction, TPrecision, TEnviroment>(
+            IAgent<TPrecision, TEnviroment, TAction> agent,
+            TEnviroment env)
+        where TEnviroment : ITwoAgentEnviroment<TAction>
+        where TPrecision : struct, ISubtractionOperators<TPrecision, TPrecision, TPrecision>
+    {
+        List<TAction> takenActions = [];
+        int us = env.Turn;
+
+        // Play the game according to the agents policy.
+        while (!env.Terminal)
+        {
+            takenActions.Add(env.LegalActions().MaxBy(action => agent.Q(env, action))
+                ?? throw new Exception("No more moves in the env., even tho the env. is not terminal."));
+            env.MakeAction(takenActions.Last());
+        }
+
+        int n = takenActions.Count;
+
+        int finalReward = env.Reward;
+        foreach (var action in takenActions.Reverse<TAction>())
+        {
+            env.UndoAction(action);
+            MonteCarloQLearning<TPrecision>.Update(agent, (dynamic)finalReward, env, action, n);
+            finalReward = -finalReward;
+        }
     }
 
     public static void UserQuickplay<TAction, TPrecision, TEnviroment>(

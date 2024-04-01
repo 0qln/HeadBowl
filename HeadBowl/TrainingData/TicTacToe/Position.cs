@@ -8,7 +8,7 @@ using GameState = int;
 
 namespace HeadBowl.TrainingData.TicTacToe;
 
-public struct Position : IEnviroment<int>
+public struct Position : ITwoAgentEnviroment<int>
 {
     /// <summary>
     /// Indexed by color
@@ -59,13 +59,22 @@ public struct Position : IEnviroment<int>
     /// </summary>
     public GameState GameState { get; private set; } = GameStates.Ongoing;
 
+    /// <summary>
+    /// Wether the position is terminal or not.
+    /// </summary>
     public readonly bool Terminal => GameState != GameStates.Ongoing;
+    
+    /// <summary>
+    /// Relative to the last player to make a move.
+    /// </summary>
+    public readonly int Reward => Terminal ? (GameState == GameStates.Draw ? Rewards.Draw : Rewards.Win) : Rewards.None;
 
     /// <summary>
     /// The side to move.
     /// </summary>
     public Color Turn { get; private set; } = Colors.X;
-
+    public readonly Color Agent1 => Colors.X;
+    public readonly Color Agent2 => Colors.O;
 
     /// <summary>
     /// Default constructor.
