@@ -40,6 +40,14 @@ public static class Program
 
     public static void Main(string[] args)
     {
+        Mnist<double> mnist = new(
+            testImagesPath:@"D:\Programmmieren\Mnist\t10k-images.idx3-ubyte",
+            testLabelsPath:@"D:\Programmmieren\Mnist\t10k-labels.idx1-ubyte",
+            trainImagesPath:@"D:\Programmmieren\Mnist\train-images.idx3-ubyte",
+            trainLabelsPath:@"D:\Programmmieren\Mnist\train-labels.idx1-ubyte");
+
+        return;
+
         const double BETA = 0.9;
 
         var nn = Net.Build(
