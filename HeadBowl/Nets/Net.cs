@@ -196,6 +196,8 @@ namespace HeadBowl.Nets
             while (File.Exists(destination()));
 
             // Create the file.
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
             using BinaryWriter fs = new(File.Open(destination(), FileMode.Create));
             foreach (var layer in _layers)
             {
@@ -209,7 +211,8 @@ namespace HeadBowl.Nets
 
             return destination();
         }
-        // net-64bit-layers_10_200_200_1-backup-(0)
+
+        // eg. "net-64bit-layers_10_200_200_1-backup-(0)"
         void INet<double>.Load(string file, bool destroyAfterRead)
         {
             // Check bounds and hyper parameters
