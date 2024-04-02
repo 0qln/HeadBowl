@@ -6,5 +6,5 @@ public interface ITrainingData<TPrecision>
     public int OutputSize { get; }
     public int SampleCount { get; }
 
-    public DataInstance<TPrecision>[] Data { get; }
+    public DataInstance<TPrecision>[] TrainingData { get; }
 }

@@ -3,7 +3,8 @@ using System.Linq;
 
 namespace HeadBowl.TrainingData;
 
-public class Mnist<TPrecision>(string trainImagesPath, string testImagesPath, string trainLabelsPath, string testLabelsPath) : ITrainingData<TPrecision>, ITestingData<TPrecision>
+public class Mnist<TPrecision>(string trainImagesPath, string testImagesPath, string trainLabelsPath, string testLabelsPath) 
+    : ITrainingData<TPrecision>, ITestingData<TPrecision>
 {
     public int InputSize => 28 * 28;
     public int OutputSize => 1;
@@ -12,8 +13,8 @@ public class Mnist<TPrecision>(string trainImagesPath, string testImagesPath, st
         _trainingData = Mnist<TPrecision>.LoadData(trainImagesPath, trainLabelsPath),
         _testingData = Mnist<TPrecision>.LoadData(testImagesPath, testLabelsPath);
 
-    DataInstance<TPrecision>[] ITestingData<TPrecision>.Data => _testingData;
-    DataInstance<TPrecision>[] ITrainingData<TPrecision>.Data => _trainingData;
+    DataInstance<TPrecision>[] ITestingData<TPrecision>.TestingData => _testingData;
+    DataInstance<TPrecision>[] ITrainingData<TPrecision>.TrainingData => _trainingData;
 
     int ITrainingData<TPrecision>.SampleCount => _trainingData.Length;
     int ITestingData<TPrecision>.SampleCount => _testingData.Length;

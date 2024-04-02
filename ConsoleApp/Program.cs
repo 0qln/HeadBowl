@@ -1,5 +1,4 @@
-﻿//#define LOAD_MNIST
-#define RL_MONTECARLO
+﻿//#define RL_MONTECARLO
 
 using HeadBowl.TrainingData;
 using HeadBowl.Layers;
@@ -25,31 +24,26 @@ using System.Numerics;
 
 public static class Program
 {
-
-#if LOAD_MNIST
-    static Mnist<double> mnist = new(
-        testImagesPath: @"D:\Programmmieren\Mnist\t10k-images.idx3-ubyte",
-        testLabelsPath: @"D:\Programmmieren\Mnist\t10k-labels.idx1-ubyte",
-        trainImagesPath: @"D:\Programmmieren\Mnist\train-images.idx3-ubyte",
-        trainLabelsPath: @"D:\Programmmieren\Mnist\train-labels.idx1-ubyte");
-#endif
-
     public static void Main(string[] args)
     {
-
-#if RL_MONTECARLO
-        const double BETA = 0.9;
+        var optimizer = Optimizers.None<double>();
 
         var nn = Net.Build(
-            new FullyConnectedLayer<double, Sigmoid>(10, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(300, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(200, Optimizers.Momentum(BETA)),
-            new FullyConnectedLayer<double, Sigmoid>(1, Optimizers.Momentum(BETA))
+            new FullyConnectedLayer<double, Sigmoid>(28 * 28, optimizer),
+            new FullyConnectedLayer<double, Sigmoid>(28 * 28 / 2, optimizer),
+            new FullyConnectedLayer<double, Sigmoid>(28 * 28 / 4, optimizer),
+            new FullyConnectedLayer<double, Sigmoid>(28 * 28 / 8, optimizer),
+            new FullyConnectedLayer<double, Sigmoid>(28 * 28 / 16, optimizer),
+            new FullyConnectedLayer<double, Sigmoid>(1, optimizer)
         );
+        nn.EnableParallelProcessing = true;
 
-        nn.Load(@"..\Backups\net-64bit-layers_10_200_300_200_200_1-backup-(8).dat");
+        BenchmarkNetMnist(nn, 10_000, 100);
+
+
+#if RL_MONTECARLO
+
+        nn.Load(@"..\..\Release\Backups\net-64bit-layers_10_200_300_200_200_1-backup-(8).dat");
 
         UserQuickplay(false, new Engine<double>(nn), new Position(), Utils.StrToSq);
 
@@ -117,7 +111,7 @@ public static class Program
         Console.WriteLine("Quickplay finished.");
     }
 
-    public static void BenchmarkNet<TPrecision>(INet<TPrecision> net, int epochs, int messages)
+    public static void BenchmarkNetXor<TPrecision>(INet<TPrecision> net, int epochs, int messages)
     {
         var traningData = new Xor<TPrecision>();
 
@@ -130,6 +124,48 @@ public static class Program
             if (i % (epochs / messages) == 0)
                 foreach (var item in net.Forward(batch.Inputs)) 
                     Console.WriteLine(item);
+        }
+    }
+
+    public static void BenchmarkNetMnist<TPrecision>(INet<TPrecision> net, int epochs, int messages)
+        where TPrecision : struct
+    {
+        Mnist<double> mnist = new(
+            testImagesPath: @"D:\Programmmieren\Mnist\t10k-images.idx3-ubyte",
+            testLabelsPath: @"D:\Programmmieren\Mnist\t10k-labels.idx1-ubyte",
+            trainImagesPath: @"D:\Programmmieren\Mnist\train-images.idx3-ubyte",
+            trainLabelsPath: @"D:\Programmmieren\Mnist\train-labels.idx1-ubyte"
+        );
+
+        var data = Choose.Random(mnist as ITrainingData<TPrecision>);
+
+        for (int i = 0; i < epochs; i++)
+        {
+            //var train = Choose.Random(mnist as ITrainingData<TPrecision>);
+            net.Train(data.Inputs, data.Expected);
+
+            if (i % (epochs / messages) == 0)
+            {
+                Console.WriteLine("Testing Results [Output | Expected]: ");
+                //for (int j = 0; j < 10; j++)
+                {
+                    //var test = Choose.Random(mnist as ITestingData<TPrecision>);
+                    PrintMnistInput(data.Inputs);
+                    Console.WriteLine($"{data.Expected[0]} | {net.Forward(data.Inputs)[0]}");
+                }                    
+            }
+        }
+    }
+
+    static readonly string gradient = String.Concat(@"$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,""^`'. ".Reverse());
+    public static void PrintMnistInput<T>(T[] inputs)
+        where T : struct
+    {
+        for (int y = 0; y < 28; y++)
+        {
+            for (int x = 0; x < 28; x++)
+                Console.Write(new string(gradient[(int)((dynamic)inputs[x + 28 * y] / 255 * gradient.Length) % gradient.Length], 2));
+            Console.WriteLine();
         }
     }
 
@@ -188,7 +224,7 @@ public static class Program
             nn.ExperimentalFeature = false;
             nn.EnableParallelProcessing = false;
 
-            foreach (var data in trainingData.Data)
+            foreach (var data in trainingData.TrainingData)
                 nn.Train(data.Inputs, data.Expected);
         }
 
@@ -198,7 +234,7 @@ public static class Program
             nn.ExperimentalFeature = true;
             nn.EnableParallelProcessing = false;
 
-            foreach (var data in trainingData.Data)
+            foreach (var data in trainingData.TrainingData)
                 nn.Train(data.Inputs, data.Expected);
         }
 
@@ -208,7 +244,7 @@ public static class Program
             nn.ExperimentalFeature = false;
             nn.EnableParallelProcessing = true;
 
-            foreach (var data in trainingData.Data)
+            foreach (var data in trainingData.TrainingData)
                 nn.Train(data.Inputs, data.Expected);
         }
 
@@ -218,7 +254,7 @@ public static class Program
             nn.ExperimentalFeature = true;
             nn.EnableParallelProcessing = true;
 
-            foreach (var data in trainingData.Data)
+            foreach (var data in trainingData.TrainingData)
                 nn.Train(data.Inputs, data.Expected);
         }
 
