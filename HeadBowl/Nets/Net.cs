@@ -18,8 +18,32 @@ namespace HeadBowl.Nets
 
         public ILayer<T>[] Layers { get; }
 
-        public string Safe(string folder);
-        public void Load(string file, bool destroyAfterRead = false);
+        /// <summary>
+        /// Save the raw weights and biases of the nn with minimal metadata in the file name.
+        /// </summary>
+        /// <param name="folder">The destination folder.</param>
+        /// <returns>The destination file.</returns>
+        public string SaveRaw(string folder);
+
+        /// <summary>
+        /// Load an nn from a simple file with only weights and biases.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="destroyAfterRead"></param>
+        public void LoadRaw(string file, bool destroyAfterRead = false);
+
+        /// <summary>
+        /// Save the nn as a '.nnok' file with all the data and meta data contained in the file.
+        /// </summary>
+        /// <param name="filePath"></param>
+        public void SaveNNOK(string filePath);
+
+        /// <summary>
+        /// Load the nn from a '.nnok' file.
+        /// </summary>
+        /// <param name="filePath"></param>
+        public void LoadNNOK(string filePath);
+
     }
 
 
@@ -178,7 +202,7 @@ namespace HeadBowl.Nets
             return sb.ToString();
         }
 
-        string INet<double>.Safe(string folder)
+        string INet<double>.SaveRaw(string folder)
         {
             int fileNum = 0;
             string name;
@@ -207,7 +231,7 @@ namespace HeadBowl.Nets
         }
 
         // eg. "net-64bit-layers_10_200_200_1-backup-(0)"
-        void INet<double>.Load(string file, bool destroyAfterRead)
+        void INet<double>.LoadRaw(string file, bool destroyAfterRead)
         {
             // Check bounds and hyper parameters
             if (Regex.Match(file, @"(?<=net-).*(?=bit-)").Value != "64")
@@ -239,6 +263,25 @@ namespace HeadBowl.Nets
             {
                 File.Delete(file);
             }
+        }
+
+        // TODO
+        void INet<double>.SaveNNOK(string filePath)
+        {
+            // 1. Metadata
+            // Layer count to expect
+
+            // 2. Foeach layer: 
+            // 2.1: Layer type
+            // 2.2: Weights, biases, etc...
+
+            throw new NotImplementedException();
+        }
+
+        // TODO
+        void INet<double>.LoadNNOK(string filePath)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿//#define RL_MONTECARLO
+﻿#define RL_MONTECARLO
 
 using HeadBowl.TrainingData;
 using HeadBowl.Layers;
@@ -43,7 +43,7 @@ public static class Program
 
 #if RL_MONTECARLO
 
-        nn.Load(@"..\..\Release\Backups\net-64bit-layers_10_200_300_200_200_1-backup-(8).dat");
+        nn.LoadRaw(@"..\..\Release\Backups\net-64bit-layers_10_200_300_200_200_1-backup-(8).dat");
 
         UserQuickplay(false, new Engine<double>(nn), new Position(), Utils.StrToSq);
 
@@ -61,9 +61,7 @@ public static class Program
 #endif
     }
 
-    public static void SelfPlay<TAction, TPrecision, TEnviroment>(
-            IAgent<TPrecision, TEnviroment, TAction> agent,
-            TEnviroment env)
+    public static void SelfPlay<TAction, TPrecision, TEnviroment>(IAgent<TPrecision, TEnviroment, TAction> agent, TEnviroment env)
         where TEnviroment : ITwoAgentEnviroment<TAction>
         where TPrecision : struct, ISubtractionOperators<TPrecision, TPrecision, TPrecision>
     {
